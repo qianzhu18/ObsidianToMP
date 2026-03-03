@@ -65,13 +65,18 @@ function encodePath(path: string) {
 
 function parseErrorMessage(status: number, text: string) {
   const t = text.trim();
-  if (t.includes('SecondLevelDomainForbidden')) {
+  if (isSecondLevelDomainForbidden(t)) {
     return '上传失败：当前图床要求使用 virtual-hosted-style，请在插件设置将 URL Style 切换为 “virtual-hosted” 或 “auto”。';
   }
   if (t.length === 0) {
     return `上传失败，HTTP ${status}`;
   }
   return `上传失败，HTTP ${status}: ${t.slice(0, 240)}`;
+}
+
+function isSecondLevelDomainForbidden(text: string) {
+  return /SecondLevelDomainForbidden/i.test(text)
+    || /Please use virtual hosted style/i.test(text);
 }
 
 type S3UrlStyle = 'path' | 'virtual-hosted';
@@ -114,6 +119,10 @@ export class CloudImageUploader {
       // ignore and fallback
     }
     return 'path';
+  }
+
+  getEffectiveUrlStyle() {
+    return this.getUrlStyle();
   }
 
   private validate() {
@@ -268,7 +277,7 @@ export class CloudImageUploader {
     if (
       response.status === 403
       && preferredStyle === 'path'
-      && response.text.includes('SecondLevelDomainForbidden')
+      && isSecondLevelDomainForbidden(response.text)
     ) {
       usedStyle = 'virtual-hosted';
       response = await this.doUpload(blob, this.getUploadUrl(objectKey, usedStyle));

@@ -563,7 +563,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					try {
 						const uploader = new CloudImageUploader(this.settings.cloudImageHost);
 						const result = await uploader.uploadTestImage();
-						new Notice(`测试成功：${result.url}`);
+						new Notice(`测试成功（${uploader.getEffectiveUrlStyle()}）：${result.url}`);
 					} catch (error) {
 						new Notice(`测试失败：${error.message}`);
 					} finally {
