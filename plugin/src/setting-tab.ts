@@ -488,6 +488,21 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName('URL Style')
+			.setDesc('阿里云 OSS 推荐 virtual-hosted；不确定时用 auto（自动判断并兜底重试）。')
+			.addDropdown(dropdown => {
+				dropdown
+					.addOption('auto', 'auto（推荐）')
+					.addOption('path', 'path-style')
+					.addOption('virtual-hosted', 'virtual-hosted-style')
+					.setValue(this.settings.cloudImageHost.urlStyle || 'auto')
+					.onChange(async (value: 'auto' | 'path' | 'virtual-hosted') => {
+						this.settings.cloudImageHost.urlStyle = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
 			.setName('AccessKey ID')
 			.addText(text => {
 				text.setPlaceholder('Access Key ID')

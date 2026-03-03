@@ -7,6 +7,7 @@ export interface S3CompatibleImageHostConfig {
   endpoint: string;
   bucket: string;
   region: string;
+  urlStyle: 'auto' | 'path' | 'virtual-hosted';
   accessKeyId: string;
   secretAccessKey: string;
   publicBaseUrl: string;
@@ -64,10 +65,20 @@ function encodePath(path: string) {
 
 function parseErrorMessage(status: number, text: string) {
   const t = text.trim();
+  if (t.includes('SecondLevelDomainForbidden')) {
+    return '上传失败：当前图床要求使用 virtual-hosted-style，请在插件设置将 URL Style 切换为 “virtual-hosted” 或 “auto”。';
+  }
   if (t.length === 0) {
     return `上传失败，HTTP ${status}`;
   }
   return `上传失败，HTTP ${status}: ${t.slice(0, 240)}`;
+}
+
+type S3UrlStyle = 'path' | 'virtual-hosted';
+
+interface UploadResponse {
+  status: number;
+  text: string;
 }
 
 export class CloudImageUploader {
@@ -85,6 +96,26 @@ export class CloudImageUploader {
     return normalizeHttpUrl(this.config.publicBaseUrl || '', 'Public Base URL', false);
   }
 
+  private getEndpointUrl() {
+    return new URL(this.getEndpoint());
+  }
+
+  private getUrlStyle(): S3UrlStyle {
+    if (this.config.urlStyle === 'path' || this.config.urlStyle === 'virtual-hosted') {
+      return this.config.urlStyle;
+    }
+
+    try {
+      const host = this.getEndpointUrl().hostname.toLowerCase();
+      if (host.includes('aliyuncs.com')) {
+        return 'virtual-hosted';
+      }
+    } catch (error) {
+      // ignore and fallback
+    }
+    return 'path';
+  }
+
   private validate() {
     this.getEndpoint();
     if (!this.config.bucket) {
@@ -96,6 +127,18 @@ export class CloudImageUploader {
     if (!this.config.secretAccessKey) {
       throw new Error('请先配置云端图床 Secret Access Key');
     }
+  }
+
+  private buildVirtualHostUrl(endpoint: URL, key: string) {
+    const bucket = encodeURIComponent(this.config.bucket);
+    const basePath = trimSlashes(endpoint.pathname);
+    const path = basePath.length > 0 ? `${basePath}/${encodePath(key)}` : encodePath(key);
+    const url = new URL(endpoint.toString());
+    url.pathname = `/${path}`;
+    url.search = '';
+    url.hash = '';
+    url.hostname = `${bucket}.${endpoint.hostname}`;
+    return trimTrailingSlash(url.toString());
   }
 
   private makeObjectKey(fileName: string, contentType: string) {
@@ -113,30 +156,33 @@ export class CloudImageUploader {
     return `${yyyy}/${mm}/${dd}/${filename}`;
   }
 
-  private getUploadUrl(key: string) {
-    const endpoint = this.getEndpoint();
+  private getUploadUrl(key: string, style: S3UrlStyle) {
+    const endpoint = this.getEndpointUrl();
+    if (style === 'virtual-hosted') {
+      return this.buildVirtualHostUrl(endpoint, key);
+    }
+    const endpointText = trimTrailingSlash(endpoint.toString());
     const bucket = encodeURIComponent(this.config.bucket);
-    return `${endpoint}/${bucket}/${encodePath(key)}`;
+    return `${endpointText}/${bucket}/${encodePath(key)}`;
   }
 
-  private getPublicUrl(key: string) {
+  private getPublicUrl(key: string, style: S3UrlStyle) {
     const encodedKey = encodePath(key);
     const customBase = this.getPublicBaseUrl();
     if (customBase.length > 0) {
       return `${customBase}/${encodedKey}`;
     }
-    const endpoint = this.getEndpoint();
+    const endpoint = this.getEndpointUrl();
+    if (style === 'virtual-hosted') {
+      return this.buildVirtualHostUrl(endpoint, key);
+    }
+    const endpointText = trimTrailingSlash(endpoint.toString());
     const bucket = encodeURIComponent(this.config.bucket);
-    return `${endpoint}/${bucket}/${encodedKey}`;
+    return `${endpointText}/${bucket}/${encodedKey}`;
   }
 
-  async uploadBlob(blob: Blob, fileName: string): Promise<CloudUploadResult> {
-    this.validate();
-
+  private async doUpload(blob: Blob, uploadUrl: string): Promise<UploadResponse> {
     const region = this.config.region || 'auto';
-    const objectKey = this.makeObjectKey(fileName, blob.type || 'image/jpeg');
-    const uploadUrl = this.getUploadUrl(objectKey);
-
     const awsClient = new AwsClient({
       accessKeyId: this.config.accessKeyId,
       secretAccessKey: this.config.secretAccessKey,
@@ -165,13 +211,70 @@ export class CloudImageUploader {
       body: await getBlobArrayBuffer(blob),
     });
 
-    if (res.status < 200 || res.status >= 300) {
-      throw new Error(parseErrorMessage(res.status, res.text || ''));
+    return {
+      status: res.status,
+      text: res.text || '',
+    };
+  }
+
+  isManagedUrl(input: string) {
+    if (!/^https?:\/\//i.test(input)) {
+      return false;
+    }
+
+    const normalize = (url: string) => trimTrailingSlash(url.toLowerCase());
+    const target = normalize(input);
+    const customBase = this.getPublicBaseUrl();
+    if (customBase && (target === normalize(customBase) || target.startsWith(`${normalize(customBase)}/`))) {
+      return true;
+    }
+
+    try {
+      const endpoint = this.getEndpointUrl();
+      const endpointOrigin = normalize(endpoint.origin);
+      const bucket = encodeURIComponent(this.config.bucket).toLowerCase();
+      const basePath = trimSlashes(endpoint.pathname).toLowerCase();
+      const parsed = new URL(input);
+
+      const pathPrefix = basePath ? `/${basePath}/${bucket}/` : `/${bucket}/`;
+      if (normalize(parsed.origin) === endpointOrigin && parsed.pathname.toLowerCase().startsWith(pathPrefix)) {
+        return true;
+      }
+
+      const virtualHost = `${bucket}.${endpoint.hostname}`.toLowerCase();
+      if (parsed.hostname.toLowerCase() === virtualHost) {
+        return true;
+      }
+    } catch (error) {
+      return false;
+    }
+
+    return false;
+  }
+
+  async uploadBlob(blob: Blob, fileName: string): Promise<CloudUploadResult> {
+    this.validate();
+    const objectKey = this.makeObjectKey(fileName, blob.type || 'image/jpeg');
+    const preferredStyle = this.getUrlStyle();
+    let usedStyle = preferredStyle;
+    let response = await this.doUpload(blob, this.getUploadUrl(objectKey, preferredStyle));
+
+    if (
+      response.status === 403
+      && preferredStyle === 'path'
+      && response.text.includes('SecondLevelDomainForbidden')
+    ) {
+      usedStyle = 'virtual-hosted';
+      response = await this.doUpload(blob, this.getUploadUrl(objectKey, usedStyle));
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(parseErrorMessage(response.status, response.text || ''));
     }
 
     return {
       key: objectKey,
-      url: this.getPublicUrl(objectKey),
+      url: this.getPublicUrl(objectKey, usedStyle),
     };
   }
 

@@ -41,3 +41,12 @@
 - 修复图床 Endpoint 未写协议时的报错，支持自动补全 `https://`。
 - 增加主题/高亮缺失时默认回退逻辑，避免预览空白或无样式。
 - 本地构建验证通过：`npm run build`。
+
+## 2026-03-04 当日补丁（v3）
+- 修复阿里云 OSS `SecondLevelDomainForbidden` 上传错误：
+  - 增加图床 `URL Style` 配置（`auto/path/virtual-hosted`）。
+  - `auto` 模式下在 OSS 场景自动选择/重试 `virtual-hosted-style`。
+- 云端上传时增加“已是同图床 URL 则跳过重复上传”逻辑。
+- 新增“上传+生成Hosted稿”能力：
+  - 上传并替换后，自动生成 `*.hosted.md` 副本用于后续本地复制/发布。
+- 本地构建验证通过：`npm run build`。

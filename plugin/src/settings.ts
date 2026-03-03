@@ -47,6 +47,7 @@ export class NMPSettings {
         endpoint: string;
         bucket: string;
         region: string;
+        urlStyle: 'auto' | 'path' | 'virtual-hosted';
         accessKeyId: string;
         secretAccessKey: string;
         publicBaseUrl: string;
@@ -88,6 +89,7 @@ export class NMPSettings {
             endpoint: '',
             bucket: '',
             region: 'auto',
+            urlStyle: 'auto',
             accessKeyId: '',
             secretAccessKey: '',
             publicBaseUrl: '',
