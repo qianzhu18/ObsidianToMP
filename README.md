@@ -98,6 +98,9 @@ codex run "根据选题卡生成公众号稿件，写入 content/inbox/xxx.md"
 # - 复制 或 发草稿
 ```
 
+完整流程文档见：
+- [agent/BMAD_OBSIDIAN_CLI_PLAYBOOK.md](./agent/BMAD_OBSIDIAN_CLI_PLAYBOOK.md)
+
 ## 分支策略（稳定可回退）
 - `stable`：稳定可用版本，只接收验证过的修复。
 - `main`：对外主线，周期性同步 `stable`。
