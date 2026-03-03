@@ -428,8 +428,8 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		containerEl.createEl('h3', {text: '云端图床（S3 兼容）'});
 
 		new Setting(containerEl)
-			.setName('启用云端图床')
-			.setDesc('用于复制前上传本地图片到你自己的对象存储。')
+			.setName('启用自动云端上传')
+			.setDesc('仅影响“复制时自动上传（未选公众号账号）”；手动上传和测试上传不受此开关影响。')
 			.addToggle(toggle => {
 				toggle.setValue(this.settings.cloudImageHost.enabled);
 				toggle.onChange(async (value) => {
@@ -451,7 +451,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Endpoint')
-			.setDesc('例如：https://<accountid>.r2.cloudflarestorage.com')
+			.setDesc('例如：https://<accountid>.r2.cloudflarestorage.com（只填域名也可以，会自动补 https://）')
 			.addText(text => {
 				text.setPlaceholder('https://s3-compatible-endpoint')
 					.setValue(this.settings.cloudImageHost.endpoint || '')
