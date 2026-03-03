@@ -151,10 +151,28 @@ export class ArticleRender implements MDRendererCallback {
 
       themeName = metadata.theme || themeName;
       highlightName = metadata.highlight || highlightName;
-      const theme = this.assetsManager.getTheme(themeName);
-      const highlight = this.assetsManager.getHighlight(highlightName);
+      const requestedThemeName = themeName;
+      const requestedHighlightName = highlightName;
+      const theme = this.assetsManager.getTheme(themeName)
+        || this.assetsManager.getTheme(this.settings.defaultStyle)
+        || this.assetsManager.defaultTheme;
+      const highlight = this.assetsManager.getHighlight(highlightName)
+        || this.assetsManager.getHighlight(this.settings.defaultHighlight)
+        || this.assetsManager.highlights?.[0];
+      if (!theme) {
+        throw new Error('未找到可用主题样式');
+      }
+      if (!highlight) {
+        throw new Error('未找到可用代码高亮样式');
+      }
+      if (requestedThemeName && !this.assetsManager.getTheme(requestedThemeName)) {
+        console.warn(`theme not found, fallback to default: ${requestedThemeName}`);
+      }
+      if (requestedHighlightName && !this.assetsManager.getHighlight(requestedHighlightName)) {
+        console.warn(`highlight not found, fallback to default: ${requestedHighlightName}`);
+      }
       const baseCSS = this.settings.baseCSS ? `.note-to-mp {${this.settings.baseCSS}}` : '';
-      return `${InlineCSS}\n\n${highlight!.css}\n\n${theme!.css}\n\n${baseCSS}\n\n${customCSS}`;
+      return `${InlineCSS}\n\n${highlight.css}\n\n${theme.css}\n\n${baseCSS}\n\n${customCSS}`;
     } catch (error) {
       console.error(error);
       new Notice(`获取样式失败${themeName}|${highlightName}，请检查主题是否正确安装。`);

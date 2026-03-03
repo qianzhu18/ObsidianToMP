@@ -135,7 +135,7 @@ section .note-callout-custom {
 /* --------------------------------------- */
 /* 列表需要强制设置样式*/
 /* --------------------------------------- */
-ul {
+.note-to-mp ul {
   list-style-type: disc;
 }
 
@@ -219,11 +219,46 @@ ul {
 }
 
 .note-to-mp .code-section pre {
+  margin: 0 !important;
+  padding: 0 !important;
   white-space: pre !important;
+  overflow: auto;
+  flex: 1;
+  min-width: 0;
 }
 
 .note-to-mp .code-section code {
   display: block !important;
   white-space: pre !important;
+  font-family: Consolas,Courier,monospace;
+}
+
+.note-to-mp .code-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875em;
+  border: rgb(240, 240, 240) 1px solid;
+  line-height: 1.6;
+  font-size: 14px;
+  margin: 1em 0;
+  padding: 0.875em;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.note-to-mp .code-section ul {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  flex-shrink: 0;
+}
+
+.note-to-mp .code-section ul > li {
+  list-style: none !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: right;
+  line-height: 1.6 !important;
 }
 `;
