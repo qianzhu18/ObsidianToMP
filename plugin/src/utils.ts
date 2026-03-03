@@ -209,6 +209,47 @@ export function applyCSS(html: string, css: string) {
 	return root.outerHTML;
 }
 
+function htmlToPlainText(html: string) {
+	try {
+		const doc = sanitizeHTMLToDom(html);
+		return doc.textContent?.trim() || '';
+	} catch (error) {
+		console.warn('Failed to parse html to plain text:', error);
+		return '';
+	}
+}
+
+export async function writeHtmlToClipboard(html: string) {
+	const text = htmlToPlainText(html) || html;
+
+	if (navigator?.clipboard?.write) {
+		const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+		if (ClipboardItemCtor) {
+			try {
+				await navigator.clipboard.write([
+					new ClipboardItemCtor({
+						'text/html': new Blob([html], { type: 'text/html' }),
+						'text/plain': new Blob([text], { type: 'text/plain' }),
+					}),
+				]);
+				return;
+			} catch (error) {
+				console.warn('navigator.clipboard.write failed, fallback to electron clipboard:', error);
+			}
+		}
+	}
+
+	try {
+		const { clipboard } = require('electron');
+		clipboard.write({ html, text });
+		return;
+	} catch (error) {
+		console.warn('electron clipboard fallback failed:', error);
+	}
+
+	throw new Error('当前环境不支持写入剪贴板');
+}
+
 export function uevent(name: string) {
 	// Analytics endpoint removed in local-first mode.
 	return;

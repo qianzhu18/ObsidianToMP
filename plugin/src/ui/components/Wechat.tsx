@@ -121,7 +121,7 @@ const WechatInternal: React.FC = () => {
   
   const onHelpClick = () => {
     const { shell } = require('electron');
-    shell.openExternal('https://github.com/sunbooshi/note-to-mp')
+    shell.openExternal('https://github.com/qianzhu18/ObsidianToMP')
     uevent('open-help');
   };
 

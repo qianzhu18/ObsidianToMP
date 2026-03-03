@@ -26,7 +26,6 @@ import { NMPSettings } from './settings';
 import { NoteToMpSettingTab } from './setting-tab';
 import AssetsManager from './assets';
 import { setVersion, uevent } from './utils';
-import { WidgetsModal } from './widgets-modal';
 import { NotePubModal } from './note-pub';
 import { usePluginStore } from './store/PluginStore';
 import './styles.css';
@@ -48,7 +47,7 @@ export default class NoteToMpPlugin extends Plugin {
 	}
 
 	async onload() {
-		console.log('Loading NoteToMP');
+		console.log('Loading ObsidianToMP');
 		usePluginStore.getState().setApp(this.app);
 		usePluginStore.getState().setPlugin(this);
 		setVersion(this.manifest.version);
@@ -64,10 +63,10 @@ export default class NoteToMpPlugin extends Plugin {
 		const ribbonIconEl = this.addRibbonIcon('clipboard-paste', '复制到公众号', (evt: MouseEvent) => {
 			this.activateView();
 		});
-		ribbonIconEl.addClass('note-to-mp-plugin-ribbon-class');
+		ribbonIconEl.addClass('obsidian-to-mp-plugin-ribbon-class');
 
 		this.addCommand({
-			id: 'note-to-mp-preview',
+			id: 'obsidian-to-mp-preview',
 			name: '复制到公众号',
 			callback: () => {
 				this.activateView();
@@ -77,15 +76,7 @@ export default class NoteToMpPlugin extends Plugin {
 		this.addSettingTab(new NoteToMpSettingTab(this.app, this));
 
 		this.addCommand({
-			id: 'note-to-mp-widget',
-			name: '插入样式小部件',
-			callback: () => {
-				new WidgetsModal(this.app).open();
-			}
-		});
-
-		this.addCommand({
-			id: 'note-to-mp-pub',
+			id: 'obsidian-to-mp-pub',
 			name: '发布公众号文章',
 			callback: () => {
 				const file = this.app.workspace.getActiveFile();
