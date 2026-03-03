@@ -50,6 +50,10 @@ interface ImageInfo {
 
 type UploadBlobHandler = (blob: Blob, filename: string) => Promise<string>;
 
+interface UploadImagesByHandlerOptions {
+    skipRemoteUrl?: (url: string) => boolean;
+}
+
 export class LocalImageManager {
     private images: Map<string, ImageInfo>;
     private _imageId: number = 1;
@@ -304,7 +308,7 @@ export class LocalImageManager {
         return result;
     }
 
-    async uploadImagesByHandler(root: HTMLElement, vault: Vault, uploadBlob: UploadBlobHandler) {
+    async uploadImagesByHandler(root: HTMLElement, vault: Vault, uploadBlob: UploadBlobHandler, options?: UploadImagesByHandlerOptions) {
         const images = root.getElementsByTagName('img');
         const uploaded = new Map<string, string>();
 
@@ -349,6 +353,23 @@ export class LocalImageManager {
                 }
             }
             else if (img.src.startsWith('http')) {
+                if (options?.skipRemoteUrl && options.skipRemoteUrl(img.src)) {
+                    const imageInfo = info || {
+                        resUrl: mapKey,
+                        filePath: '',
+                        url: null,
+                        media_id: null,
+                        id: this.getImageId(),
+                    };
+                    imageInfo.url = img.src;
+                    if (!imageInfo.id) {
+                        imageInfo.id = this.getImageId();
+                    }
+                    this.setImage(mapKey, imageInfo);
+                    img.setAttribute('src', img.src);
+                    img.setAttribute('data-img-id', imageInfo.id.toString());
+                    continue;
+                }
                 const rep = await requestUrl(img.src);
                 blob = new Blob([rep.arrayBuffer], { type: rep.headers['content-type'] || 'application/octet-stream' });
                 filename = this.getImageNameFromUrl(img.src, rep.headers['content-type'] || blob.type);

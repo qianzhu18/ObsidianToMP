@@ -97,6 +97,49 @@ export class ArticleRender implements MDRendererCallback {
     return container.innerText.trimStart();
   }
 
+  private replaceLocalImageLinksWithHosted(md: string, infos: { filePath: string; url: string }[]) {
+    let content = md;
+    let replaced = 0;
+    const escapeRegExp = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const sorted = [...infos].sort((a, b) => b.filePath.length - a.filePath.length);
+    for (const info of sorted) {
+      const variants = new Set<string>();
+      const path = info.filePath.replace(/\\/g, '/');
+      const name = path.split('/').pop() || path;
+      variants.add(path);
+      variants.add(name);
+      variants.add(encodeURI(path));
+      variants.add(encodeURI(name));
+      variants.add(`./${name}`);
+      variants.add(`../${name}`);
+
+      for (const variant of variants) {
+        const escaped = escapeRegExp(variant);
+
+        const wikiPattern = new RegExp(`!\\[\\[${escaped}(?:\\|[^\\]]*)?\\]\\]`, 'g');
+        content = content.replace(wikiPattern, () => {
+          replaced += 1;
+          return `![](${info.url})`;
+        });
+
+        const mdPattern = new RegExp(`!\\[([^\\]]*)\\]\\(${escaped}(?:\\s+"[^"]*")?\\)`, 'g');
+        content = content.replace(mdPattern, (_, alt: string) => {
+          replaced += 1;
+          return `![${alt}](${info.url})`;
+        });
+
+        const mdAnglePattern = new RegExp(`!\\[([^\\]]*)\\]\\(<${escaped}>(?:\\s+"[^"]*")?\\)`, 'g');
+        content = content.replace(mdAnglePattern, (_, alt: string) => {
+          replaced += 1;
+          return `![${alt}](${info.url})`;
+        });
+      }
+    }
+
+    return { content, replaced };
+  }
+
   errorContent(error: any) {
     return '<h1>渲染失败!</h1><br/>'
       + '如需帮助请前往&nbsp;&nbsp;<a href="https://github.com/qianzhu18/ObsidianToMP/issues">https://github.com/qianzhu18/ObsidianToMP/issues</a>&nbsp;&nbsp;反馈<br/><br/>'
@@ -296,11 +339,49 @@ export class ArticleRender implements MDRendererCallback {
   async uploadImagesToCloud(container: HTMLElement) {
     const uploader = new CloudImageUploader(this.settings.cloudImageHost);
     await this.cachedElementsToImages(container);
-    await this.imageManager.uploadImagesByHandler(container, this.app.vault, async (blob, filename) => {
-      const result = await uploader.uploadBlob(blob, filename);
-      return result.url;
-    });
+    await this.imageManager.uploadImagesByHandler(
+      container,
+      this.app.vault,
+      async (blob, filename) => {
+        const result = await uploader.uploadBlob(blob, filename);
+        return result.url;
+      },
+      {
+        skipRemoteUrl: (url) => uploader.isManagedUrl(url),
+      },
+    );
     this.imagesReplaced = true;
+  }
+
+  async createHostedMarkdownCopy(container: HTMLElement) {
+    if (!this.note) {
+      throw new Error('当前没有打开笔记');
+    }
+
+    const source = await this.app.vault.cachedRead(this.note);
+    const infos = this.imageManager
+      .getImageInfos(container)
+      .filter((item) => !!item.filePath && !!item.url && item.url.startsWith('http'))
+      .map((item) => ({ filePath: item.filePath, url: item.url! }));
+
+    if (infos.length === 0) {
+      throw new Error('未找到可替换的本地图片，请先执行“上传图片到云端”');
+    }
+
+    const { content, replaced } = this.replaceLocalImageLinksWithHosted(source, infos);
+    if (replaced === 0) {
+      throw new Error('已上传图片，但未在 Markdown 原文中匹配到可替换的图片链接');
+    }
+
+    const hostedPath = this.note.path.replace(/\.md$/i, '') + '.hosted.md';
+    const existing = this.app.vault.getFileByPath(hostedPath) as TFile | null;
+    if (existing) {
+      await this.app.vault.modify(existing, content);
+    } else {
+      await this.app.vault.create(hostedPath, content);
+    }
+
+    return { hostedPath, replaced, updated: !!existing };
   }
 
   getSecret(appid: string) {

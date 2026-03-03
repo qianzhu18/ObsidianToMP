@@ -193,6 +193,23 @@ const WechatInternal: React.FC = () => {
     }
   };
 
+  const handleUploadCloudAndCreateHosted = async () => {
+    if (activeNote == null || contentRef.current == null) {
+      showErr('未初始化！');
+      return;
+    }
+    try {
+      setLoading(true);
+      await renderRef.current.uploadImagesToCloud(contentRef.current!);
+      const result = await renderRef.current.createHostedMarkdownCopy(contentRef.current!);
+      setLoading(false);
+      showMsg(`已生成 Hosted 稿：${result.hostedPath}（替换 ${result.replaced} 处）`);
+    } catch (error) {
+      setLoading(false);
+      showErr('处理失败:' + error.message);
+    }
+  };
+
   const handleCopy = async () => {
     if (Platform.isMobile) {
       showErr('由于Obsidian API的限制，移动设备不支持复制！');
@@ -266,6 +283,7 @@ const WechatInternal: React.FC = () => {
           <button onClick={handlePost}>发文章</button>
           <button onClick={handlePostImage}>发图文</button>
           <button onClick={handleUploadCloud}>上传图片到云端</button>
+          <button onClick={handleUploadCloudAndCreateHosted}>上传+生成Hosted稿</button>
           <button onClick={handleCopy}>复制</button>
           <ThemeList disabled={!!metadataTheme} />
           <button onClick={handleExport}>导出</button>
