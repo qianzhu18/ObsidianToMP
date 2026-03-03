@@ -209,6 +209,46 @@ export function applyCSS(html: string, css: string) {
 	return root.outerHTML;
 }
 
+export function normalizePasteHTML(html: string) {
+	const doc = sanitizeHTMLToDom(html);
+	const root = doc.firstChild as HTMLElement;
+	if (!root) {
+		return html;
+	}
+
+	root.querySelectorAll('pre').forEach((pre) => {
+		const item = pre as HTMLElement;
+		item.style.setProperty('white-space', 'pre');
+		item.style.setProperty('word-break', 'normal');
+		item.style.setProperty('overflow-x', 'auto');
+	});
+
+	root.querySelectorAll('pre code').forEach((code) => {
+		const item = code as HTMLElement;
+		item.style.setProperty('display', 'block');
+		item.style.setProperty('white-space', 'pre');
+	});
+
+	root.querySelectorAll('ol').forEach((ol) => {
+		const item = ol as HTMLElement;
+		item.style.setProperty('list-style-type', 'decimal');
+		item.style.setProperty('padding-left', '1.5em');
+	});
+
+	root.querySelectorAll('ul').forEach((ul) => {
+		const item = ul as HTMLElement;
+		item.style.setProperty('list-style-type', 'disc');
+		item.style.setProperty('padding-left', '1.5em');
+	});
+
+	root.querySelectorAll('li').forEach((li) => {
+		const item = li as HTMLElement;
+		item.style.setProperty('display', 'list-item');
+	});
+
+	return root.outerHTML;
+}
+
 function htmlToPlainText(html: string) {
 	try {
 		const doc = sanitizeHTMLToDom(html);

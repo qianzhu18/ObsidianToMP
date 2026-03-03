@@ -31,9 +31,10 @@ import { MDRendererCallback } from './markdown/extension';
 import { MarkedParser } from './markdown/parser';
 import { LocalImageManager, LocalFile } from './markdown/local-file';
 import { CardDataManager } from './markdown/code';
-import { debounce, removeFrontMatter, writeHtmlToClipboard } from './utils';
+import { debounce, normalizePasteHTML, removeFrontMatter, writeHtmlToClipboard } from './utils';
 import { PrepareImageLib, IsImageLibReady, WebpToJPG } from './imagelib';
 import { toPng } from 'html-to-image';
+import { CloudImageUploader } from './image-host';
 
 
 export class ArticleRender implements MDRendererCallback {
@@ -88,6 +89,7 @@ export class ArticleRender implements MDRendererCallback {
     html = html.replace(/rel="noopener nofollow"/g, '');
     html = html.replace(/target="_blank"/g, '');
     html = html.replace(/data-leaf=""/g, 'leaf=""');
+    html = normalizePasteHTML(html);
     return CardDataManager.getInstance().restoreCard(html);
   }
 
@@ -266,8 +268,21 @@ export class ArticleRender implements MDRendererCallback {
     if (appid) {
       await this.uploadImages(appid, container);
     }
+    else if (this.settings.cloudImageHost.enabled && this.settings.cloudImageHost.autoUploadOnCopyWithoutWx) {
+      await this.uploadImagesToCloud(container);
+    }
     const content = this.getArticleContent(container, css);
     await writeHtmlToClipboard(content);
+  }
+
+  async uploadImagesToCloud(container: HTMLElement) {
+    const uploader = new CloudImageUploader(this.settings.cloudImageHost);
+    await this.cachedElementsToImages(container);
+    await this.imageManager.uploadImagesByHandler(container, this.app.vault, async (blob, filename) => {
+      const result = await uploader.uploadBlob(blob, filename);
+      return result.url;
+    });
+    this.imagesReplaced = true;
   }
 
   getSecret(appid: string) {

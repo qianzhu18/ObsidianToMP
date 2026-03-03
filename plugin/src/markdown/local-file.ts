@@ -48,6 +48,8 @@ interface ImageInfo {
     id: number | null;
 }
 
+type UploadBlobHandler = (blob: Blob, filename: string) => Promise<string>;
+
 export class LocalImageManager {
     private images: Map<string, ImageInfo>;
     private _imageId: number = 1;
@@ -300,6 +302,86 @@ export class LocalImageManager {
             }
         }
         return result;
+    }
+
+    async uploadImagesByHandler(root: HTMLElement, vault: Vault, uploadBlob: UploadBlobHandler) {
+        const images = root.getElementsByTagName('img');
+        const uploaded = new Map<string, string>();
+
+        const readFromImageInfo = async (info: ImageInfo | undefined) => {
+            if (!info || !info.filePath) {
+                return null;
+            }
+            const data = await this.readImageData(vault, info.filePath);
+            if (!data) {
+                return null;
+            }
+            return {
+                blob: new Blob([data.fileData]),
+                filename: data.fileName,
+                mapKey: info.resUrl,
+                info,
+            };
+        };
+
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            const imgId = img.getAttribute('data-img-id');
+            const info = this.findImageInfo(img.src, imgId ? parseInt(imgId) : null);
+
+            let blob: Blob | null = null;
+            let filename = '';
+            let mapKey = info?.resUrl || img.src;
+
+            const local = await readFromImageInfo(info);
+            if (local) {
+                blob = local.blob;
+                filename = local.filename;
+                mapKey = local.mapKey;
+            }
+            else if (img.src.startsWith('data:image/')) {
+                const data = this.base64ToBlob(img.src);
+                blob = data.blob;
+                filename = (img.id || `inline-img-${i}`) + data.ext;
+                mapKey = '#' + (img.id || `inline-img-${i}`);
+                if (!img.id) {
+                    img.id = `inline-img-${i}`;
+                }
+            }
+            else if (img.src.startsWith('http')) {
+                const rep = await requestUrl(img.src);
+                blob = new Blob([rep.arrayBuffer], { type: rep.headers['content-type'] || 'application/octet-stream' });
+                filename = this.getImageNameFromUrl(img.src, rep.headers['content-type'] || blob.type);
+                mapKey = info?.resUrl || img.src;
+            }
+
+            if (!blob || !filename) {
+                continue;
+            }
+
+            const dedupKey = `${mapKey}::${filename}`;
+            let cloudUrl = uploaded.get(dedupKey);
+            if (!cloudUrl) {
+                cloudUrl = await uploadBlob(blob, filename);
+                uploaded.set(dedupKey, cloudUrl);
+            }
+
+            const imageInfo = info || {
+                resUrl: mapKey,
+                filePath: '',
+                url: null,
+                media_id: null,
+                id: this.getImageId(),
+            };
+
+            imageInfo.url = cloudUrl;
+            if (!imageInfo.id) {
+                imageInfo.id = this.getImageId();
+            }
+            this.setImage(mapKey, imageInfo);
+            img.setAttribute('src', cloudUrl);
+            img.setAttribute('data-img-id', imageInfo.id.toString());
+        }
     }
 
     replaceImages(root: HTMLElement) {
@@ -737,7 +819,7 @@ export class LocalFile extends Extension{
         try {
             const src = await this.getExcalidrawUrl(html);
             let svg = '';
-            if (src === '') {
+            if (!src) {
                 svg = '渲染失败';
                 console.error('Failed to get Excalidraw URL');
             }
@@ -804,10 +886,6 @@ export class LocalFile extends Extension{
 
                 const info = this.parseExcalidrawLink(token.href);
                 if (info) {
-                    if (!NMPSettings.getInstance().isAuthKeyVaild()) {
-                        token.html = "<span>请设置注册码</span>";
-                        return;
-                    }
                     const id = this.generateId();
                     this.callback.cacheElement('excalidraw', id, token.raw);
                     token.html = `<span class="${info.classname}"><span class="note-embed-excalidraw" id="${id}" ${info.style}></span></span>`
