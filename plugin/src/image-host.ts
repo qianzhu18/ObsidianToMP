@@ -130,14 +130,20 @@ export class CloudImageUploader {
   }
 
   private buildVirtualHostUrl(endpoint: URL, key: string) {
-    const bucket = encodeURIComponent(this.config.bucket);
+    const bucket = this.config.bucket.trim();
     const basePath = trimSlashes(endpoint.pathname);
     const path = basePath.length > 0 ? `${basePath}/${encodePath(key)}` : encodePath(key);
     const url = new URL(endpoint.toString());
     url.pathname = `/${path}`;
     url.search = '';
     url.hash = '';
-    url.hostname = `${bucket}.${endpoint.hostname}`;
+    const endpointHost = endpoint.hostname;
+    const expectedPrefix = `${bucket.toLowerCase()}.`;
+    if (endpointHost.toLowerCase().startsWith(expectedPrefix)) {
+      url.hostname = endpointHost;
+    } else {
+      url.hostname = `${bucket}.${endpointHost}`;
+    }
     return trimTrailingSlash(url.toString());
   }
 
@@ -232,7 +238,7 @@ export class CloudImageUploader {
     try {
       const endpoint = this.getEndpointUrl();
       const endpointOrigin = normalize(endpoint.origin);
-      const bucket = encodeURIComponent(this.config.bucket).toLowerCase();
+      const bucket = this.config.bucket.trim().toLowerCase();
       const basePath = trimSlashes(endpoint.pathname).toLowerCase();
       const parsed = new URL(input);
 
@@ -242,7 +248,7 @@ export class CloudImageUploader {
       }
 
       const virtualHost = `${bucket}.${endpoint.hostname}`.toLowerCase();
-      if (parsed.hostname.toLowerCase() === virtualHost) {
+      if (parsed.hostname.toLowerCase() === virtualHost || parsed.hostname.toLowerCase() === endpoint.hostname.toLowerCase()) {
         return true;
       }
     } catch (error) {
