@@ -27,7 +27,7 @@ import AssetsManager from './assets';
 import { MDRendererCallback } from './markdown/extension';
 import { MarkedParser } from './markdown/parser';
 import { LocalImageManager, LocalFile } from './markdown/local-file';
-import { debounce, removeFrontMatter } from './utils';
+import { debounce, removeFrontMatter, writeHtmlToClipboard } from './utils';
 import { toPng } from 'html-to-image';
 
 
@@ -69,7 +69,7 @@ export class BaseRender implements MDRendererCallback {
 
   errorContent(error: any) {
     return '<h1>渲染失败!</h1><br/>'
-      + '如需帮助请前往&nbsp;&nbsp;<a href="https://github.com/sunbooshi/note-to-mp/issues">https://github.com/sunbooshi/note-to-mp/issues</a>&nbsp;&nbsp;反馈<br/><br/>'
+      + '如需帮助请前往&nbsp;&nbsp;<a href="https://github.com/qianzhu18/ObsidianToMP/issues">https://github.com/qianzhu18/ObsidianToMP/issues</a>&nbsp;&nbsp;反馈<br/><br/>'
       + '如果方便，请提供引发错误的完整Markdown内容。<br/><br/>'
       + '<br/>Obsidian版本：' + apiVersion
       + '<br/>错误信息：<br/>'
@@ -108,18 +108,14 @@ export class BaseRender implements MDRendererCallback {
     await this.cachedElementsToImages(container);
     if (!this.settings.isAuthKeyVaild()) {
       const content = container.innerHTML;
-      await navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([content], { type: 'text/html' })
-      })]);
+      await writeHtmlToClipboard(content);
       return;
     }
 
     await this.imageManager.uploadToOSS(container, this.settings.authKey, this.app.vault);
 
     const content = container.innerHTML;
-    await navigator.clipboard.write([new ClipboardItem({
-      'text/html': new Blob([content], { type: 'text/html' })
-    })]);
+    await writeHtmlToClipboard(content);
   }
 
   async exportHTML(container: HTMLElement, css: string) {

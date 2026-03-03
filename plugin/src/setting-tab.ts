@@ -178,8 +178,8 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 
 		this.headerEl = containerEl.createEl('div');
 		this.headerEl.style.cssText = 'display: flex;flex-direction: row;align-items: center;';
-		this.headerEl.createEl('h2', {text: 'NoteToMP'}).style.cssText = 'margin-right: 10px;';
-		this.headerEl.createEl('a', {text: '项目主页', attr: {href: 'https://github.com/sunbooshi/note-to-mp'}});
+		this.headerEl.createEl('h2', {text: 'ObsidianToMP'}).style.cssText = 'margin-right: 10px;';
+		this.headerEl.createEl('a', {text: '项目主页', attr: {href: 'https://github.com/qianzhu18/ObsidianToMP'}});
 		this.headerEl.createEl('div', {text: ' '}).style.cssText = 'width: 10px;';
 		const version = this.plugin.manifest.version;
 		this.headerEl.createEl('div', {text: `当前版本: v${version}`});
@@ -344,7 +344,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					})
 				    .inputEl.setAttr('style', 'width: 520px; height: 60px;');
 		})
-		const customCSSDoc = '使用指南：<a href="https://docs.dualhue.cn/customcss">https://docs.dualhue.cn/customcss</a>';
+		const customCSSDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin">https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin</a>';
 		new Setting(containerEl)
 			.setName('自定义CSS笔记')
 			.setDesc(sanitizeHTMLToDom(customCSSDoc))
@@ -359,7 +359,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 				.inputEl.setAttr('style', 'width: 320px;')
 		});
 
-		const expertDoc = '使用指南：<a href="https://docs.dualhue.cn/expert">https://docs.dualhue.cn/expert</a>';
+		const expertDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin">https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin</a>';
 		new Setting(containerEl)
 			.setName('专家设置笔记')
 			.setDesc(sanitizeHTMLToDom(expertDoc))

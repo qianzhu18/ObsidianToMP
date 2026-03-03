@@ -163,9 +163,9 @@ export class CodeRenderer extends Extension {
 		for (let line in lines) {
 			let text = lines[line];
 			if (text.length === 0) {
-				text = '<br>'
+				text = '&nbsp;';
 			}
-			body = body + '<code>' + text + '</code>';
+			body = body + '<code style="display:block;white-space:pre;">' + text + '</code>';
 			liItems = liItems + `<li>${parseInt(line)+1}</li>`;
 		}
 
@@ -178,14 +178,14 @@ export class CodeRenderer extends Extension {
 
 		let html = '';
 		if (lang) {
-		html = codeSection + '<pre style="max-width:1000% !important;" class="hljs language-'
+		html = codeSection + '<pre style="max-width:1000% !important; white-space:pre !important;" class="hljs language-'
 			+ lang
 			+ '">'
 			+ body
 			+ '</pre></section>';
 		}
 		else {
-			html = codeSection + '<pre>'
+			html = codeSection + '<pre style="white-space:pre !important;">'
 				+ body
 				+ '</pre></section>';
 		}
@@ -289,4 +289,3 @@ export class CodeRenderer extends Extension {
 		}
 	}
 }
-

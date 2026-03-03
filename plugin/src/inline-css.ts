@@ -217,4 +217,13 @@ ul {
   margin-top: -0.75em;
   margin-bottom: -0.45em;
 }
+
+.note-to-mp .code-section pre {
+  white-space: pre !important;
+}
+
+.note-to-mp .code-section code {
+  display: block !important;
+  white-space: pre !important;
+}
 `;

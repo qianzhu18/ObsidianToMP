@@ -25,7 +25,7 @@ import { uevent } from "./utils";
 
 export class WidgetsModal extends Modal {
   listener: any = null;
-  url: string = 'https://widgets.dualhue.cn';
+  url: string = 'https://github.com/qianzhu18/ObsidianToMP';
   constructor(app: App) {
     super(app);
   }

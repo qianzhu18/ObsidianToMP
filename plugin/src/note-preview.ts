@@ -52,7 +52,7 @@ export class NotePreview extends ItemView {
     }
 
     getDisplayText() {
-        return '笔记预览';
+        return 'ObsidianToMP 预览';
     }
 
     async onOpen() {

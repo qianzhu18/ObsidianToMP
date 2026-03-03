@@ -334,14 +334,14 @@ Code
 .note-to-mp .code-section pre {
     margin-block-start: 0;
     margin-block-end: 0;
-    white-space: normal;
+    white-space: pre;
     overflow: auto;
     padding: 0 0 0 0.875em;
 }
 
 .note-to-mp .code-section code {
-    display: flex;
-    text-wrap: nowrap;
+    display: block;
+    white-space: pre;
     font-family: Consolas,Courier,monospace;
 }
 `
