@@ -1,0 +1,20 @@
+This project includes code derived from the following open-source projects:
+
+1) note-to-mp
+   - Repository: https://github.com/sunbooshi/note-to-mp
+   - License: MIT
+   - Copyright: (c) 2024 sunbooshi
+
+2) raphael-publish (theme data integration)
+   - Repository: https://github.com/liuxiaopai-ai/raphael-publish
+   - License: MIT
+   - Copyright: (c) 2024 Raphael Editor Contributors
+
+Modifications in this fork include (not exhaustive):
+- Local-first WeChat token flow (no paid AuthKey dependency)
+- WeChat-only MVP focus in preview UI
+- Additional theme integration
+- Multi-device preview mode (mobile/tablet/desktop)
+- WeChat account secret masking in settings
+
+This NOTICE is provided for attribution clarity. See LICENSE for full terms.

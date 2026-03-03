@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-to-mp",
+	"name": "ObsidianToMP",
+	"version": "2.0.0",
+	"minAppVersion": "1.4.5",
+	"description": "Local-first WeChat MP publishing for Obsidian: preview, copy to editor, and sync to drafts.",
+	"author": "qianzhu18",
+	"authorUrl": "https://github.com/qianzhu18",
+	"isDesktopOnly": false
+}
