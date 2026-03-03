@@ -27,6 +27,29 @@ function trimTrailingSlash(input: string) {
   return input.replace(/\/+$/g, '');
 }
 
+function normalizeHttpUrl(input: string, fieldName: string, required = true) {
+  const raw = input.trim();
+  if (!raw) {
+    if (required) {
+      throw new Error(`请先配置云端图床 ${fieldName}`);
+    }
+    return '';
+  }
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  let parsed: URL;
+  try {
+    parsed = new URL(withProtocol);
+  } catch (error) {
+    throw new Error(`云端图床 ${fieldName} 配置错误，请填写完整域名或 URL`);
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`云端图床 ${fieldName} 仅支持 http 或 https`);
+  }
+  return trimTrailingSlash(parsed.toString());
+}
+
 function normalizeFileName(fileName: string, contentType: string) {
   const cleanName = fileName.trim().replace(/[^\w.\-]/g, '_');
   if (cleanName.includes('.')) {
@@ -54,13 +77,16 @@ export class CloudImageUploader {
     this.config = config;
   }
 
+  private getEndpoint() {
+    return normalizeHttpUrl(this.config.endpoint, 'Endpoint');
+  }
+
+  private getPublicBaseUrl() {
+    return normalizeHttpUrl(this.config.publicBaseUrl || '', 'Public Base URL', false);
+  }
+
   private validate() {
-    if (!this.config.enabled) {
-      throw new Error('云端图床未启用，请先在设置中开启');
-    }
-    if (!this.config.endpoint) {
-      throw new Error('请先配置云端图床 Endpoint');
-    }
+    this.getEndpoint();
     if (!this.config.bucket) {
       throw new Error('请先配置云端图床 Bucket');
     }
@@ -88,18 +114,18 @@ export class CloudImageUploader {
   }
 
   private getUploadUrl(key: string) {
-    const endpoint = trimTrailingSlash(this.config.endpoint);
+    const endpoint = this.getEndpoint();
     const bucket = encodeURIComponent(this.config.bucket);
     return `${endpoint}/${bucket}/${encodePath(key)}`;
   }
 
   private getPublicUrl(key: string) {
     const encodedKey = encodePath(key);
-    const customBase = trimTrailingSlash(this.config.publicBaseUrl || '');
+    const customBase = this.getPublicBaseUrl();
     if (customBase.length > 0) {
       return `${customBase}/${encodedKey}`;
     }
-    const endpoint = trimTrailingSlash(this.config.endpoint);
+    const endpoint = this.getEndpoint();
     const bucket = encodeURIComponent(this.config.bucket);
     return `${endpoint}/${bucket}/${encodedKey}`;
   }

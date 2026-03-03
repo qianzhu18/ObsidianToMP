@@ -216,6 +216,8 @@ export function normalizePasteHTML(html: string) {
 		return html;
 	}
 
+	const isInCodeSection = (el: Element) => !!el.closest('.code-section');
+
 	root.querySelectorAll('pre').forEach((pre) => {
 		const item = pre as HTMLElement;
 		item.style.setProperty('white-space', 'pre');
@@ -231,19 +233,43 @@ export function normalizePasteHTML(html: string) {
 
 	root.querySelectorAll('ol').forEach((ol) => {
 		const item = ol as HTMLElement;
+		if (isInCodeSection(item)) {
+			return;
+		}
 		item.style.setProperty('list-style-type', 'decimal');
 		item.style.setProperty('padding-left', '1.5em');
 	});
 
 	root.querySelectorAll('ul').forEach((ul) => {
 		const item = ul as HTMLElement;
+		if (isInCodeSection(item)) {
+			return;
+		}
 		item.style.setProperty('list-style-type', 'disc');
 		item.style.setProperty('padding-left', '1.5em');
 	});
 
 	root.querySelectorAll('li').forEach((li) => {
 		const item = li as HTMLElement;
+		if (isInCodeSection(item)) {
+			return;
+		}
 		item.style.setProperty('display', 'list-item');
+	});
+
+	root.querySelectorAll('.code-section ul').forEach((ul) => {
+		const item = ul as HTMLElement;
+		item.style.setProperty('list-style-type', 'none');
+		item.style.setProperty('padding-left', '0');
+		item.style.setProperty('margin', '0');
+	});
+
+	root.querySelectorAll('.code-section li').forEach((li) => {
+		const item = li as HTMLElement;
+		item.style.setProperty('display', 'block');
+		item.style.setProperty('list-style-type', 'none');
+		item.style.setProperty('margin', '0');
+		item.style.setProperty('padding', '0');
 	});
 
 	return root.outerHTML;
