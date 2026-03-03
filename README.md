@@ -71,6 +71,43 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 
 建议先点“测试上传”，成功后再正式使用。
 
+## Agent 一键写作链路（CLI + Skill + 插件）
+目标：让 Agent 在本地自动完成「写作 -> 预览 -> 图床替换 -> 发布草稿」。
+
+1. 使用 Claude Code / Codex CLI 执行写作任务，输出到 Obsidian 指定目录（`.md`）。
+2. 将写作流程封装为可复用 Skill（提示词模板、标题结构、排版规则、发布前检查）。
+3. 在 Obsidian 打开该稿件，使用 ObsidianToMP 做多端预览（手机/平板/桌面）。
+4. 点击 `上传+生成Hosted稿`，把本地图替换为云端链接并生成 `*.hosted.md`。
+5. 选择：
+   - 复制到公众号编辑器，或
+   - 一键同步到微信公众号草稿箱。
+
+### 推荐目录约定（便于 Agent 自动化）
+- `content/inbox/`：Agent 初稿输出目录
+- `content/review/`：人工校对目录
+- `content/publish/`：待发布终稿目录
+- `content/publish/*.hosted.md`：图床替换后的发布版本
+
+### 推荐自动化命令（示意）
+```bash
+# 1) 生成初稿（由你的 Agent/Skill 负责）
+codex run "根据选题卡生成公众号稿件，写入 content/inbox/xxx.md"
+
+# 2) 人工调整后在 Obsidian 中使用 ObsidianToMP 发布
+# - 上传+生成Hosted稿
+# - 复制 或 发草稿
+```
+
+## 分支策略（稳定可回退）
+- `stable`：稳定可用版本，只接收验证过的修复。
+- `main`：对外主线，周期性同步 `stable`。
+- `codex/agent-exploration`：Agent 能力探索分支（CLI + Skill 集成实验）。
+
+回退方式：
+```bash
+git checkout stable
+```
+
 ## 研发路线（Road to 50 stars）
 这是一个个人入门开源项目，目标是通过持续打磨拿到 50 stars：
 - [x] 可用 MVP：预览、复制、发草稿
