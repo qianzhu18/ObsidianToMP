@@ -62,13 +62,15 @@ export class MathRendererQueue {
             }
 
             const url = `${this.host}${path}`;
+            const headers: Record<string, string> = {};
+            if (NMPSettings.getInstance().authKey) {
+                headers.authkey = NMPSettings.getInstance().authKey;
+            }
             const res = await requestUrl({
                 url,
                 method: 'POST',
                 contentType: 'application/json',
-                headers: {
-                    authkey: NMPSettings.getInstance().authKey
-                },
+                headers,
                 body: JSON.stringify({
                     expression,
                     inline
@@ -98,10 +100,6 @@ export class MathRendererQueue {
     }
 
     async render(token: Tokens.Generic, inline: boolean, type: string) {
-        if (!NMPSettings.getInstance().isAuthKeyVaild()) {
-            return '<span>注册码无效或已过期</span>';
-        }
-
         const id = this.generateId();
         let svg = '渲染中';
         const expression = token.text;
@@ -113,7 +111,7 @@ export class MathRendererQueue {
             if (res.success) {
                 svgCache.set(expression, res.svg);
             }
-            svg = res.svg;
+            svg = res.success ? res.svg : `<code>${expression}</code>`;
         }
 
         const className = inline ? 'inline-math-svg' : 'block-math-svg';

@@ -42,6 +42,17 @@ export class NMPSettings {
     isLoaded: boolean = false;
     enableEmptyLine: boolean = false;
     dismissedAnnouncements: string[] = [];
+    cloudImageHost: {
+        enabled: boolean;
+        endpoint: string;
+        bucket: string;
+        region: string;
+        accessKeyId: string;
+        secretAccessKey: string;
+        publicBaseUrl: string;
+        pathPrefix: string;
+        autoUploadOnCopyWithoutWx: boolean;
+    };
 
     private static instance: NMPSettings;
 
@@ -72,6 +83,17 @@ export class NMPSettings {
         this.expertSettingsNote = '';
         this.enableEmptyLine = false;
         this.dismissedAnnouncements = [];
+        this.cloudImageHost = {
+            enabled: false,
+            endpoint: '',
+            bucket: '',
+            region: 'auto',
+            accessKeyId: '',
+            secretAccessKey: '',
+            publicBaseUrl: '',
+            pathPrefix: 'obsidian-to-mp',
+            autoUploadOnCopyWithoutWx: true,
+        };
     }
 
     resetStyelAndHighlight() {
@@ -104,6 +126,7 @@ export class NMPSettings {
             isVip,
             expireat,
             dismissedAnnouncements,
+            cloudImageHost,
         } = data;
 
         const settings = NMPSettings.getInstance();
@@ -167,6 +190,12 @@ export class NMPSettings {
         if (dismissedAnnouncements) {
              settings.dismissedAnnouncements = dismissedAnnouncements;
         }
+        if (cloudImageHost) {
+            settings.cloudImageHost = {
+                ...settings.cloudImageHost,
+                ...cloudImageHost,
+            };
+        }
         settings.isLoaded = true;
     }
 
@@ -193,6 +222,7 @@ export class NMPSettings {
             'isVip': settings.isVip,
             'expireat': settings.expireat,
             'dismissedAnnouncements': settings.dismissedAnnouncements,
+            'cloudImageHost': settings.cloudImageHost,
         }
     }
 

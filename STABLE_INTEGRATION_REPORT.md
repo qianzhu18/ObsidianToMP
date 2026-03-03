@@ -4,46 +4,56 @@
 - `main`: imported baseline snapshot
 - `stable`: current integration and hardening branch
 
-## Problems addressed in this round
+## This round focus (2026-03-04)
+1. Copy/paste reliability and template fidelity
+2. Cloud image hosting for local-image workflow
+3. Open-source project polish (README + project records)
 
-### 1) Frontend rebrand and de-legacy cleanup
-- Replaced visible product naming and links from upstream branding to `ObsidianToMP`.
-- Updated settings header and help links to:
-  - `https://github.com/qianzhu18/ObsidianToMP`
-- Updated theme download URL to current repo release path.
-- Removed widget command entry from plugin commands to avoid exposing legacy external widget flow.
+## Key improvements
 
-### 2) Copy/paste reliability and preview fidelity
-- Added unified clipboard write helper with fallback chain:
-  1. `navigator.clipboard.write` with HTML + plain text
-  2. Electron `clipboard.write` fallback
-- Applied helper in both WeChat article copy and non-WeChat copy path.
-- Hardened code-block rendering for paste targets:
-  - force block line rendering per code line
-  - force `white-space: pre` on code container/styles
-  - preserve empty lines in rendered code blocks
+### A. Copy/paste reliability
+- Added unified clipboard writer with fallback chain:
+  1. `navigator.clipboard.write` (HTML + plain text)
+  2. Electron `clipboard.write`
+- Applied to WeChat article copy and non-WeChat copy path.
 
-## Main files changed
-- `plugin/src/utils.ts`
+### B. Template copy fidelity
+- Added paste normalization step for generated HTML:
+  - enforce `pre/code` whitespace behavior
+  - enforce ordered/unordered list marker styles
+  - enforce list item display semantics
+- Improved code block generation to preserve line-by-line structure and empty lines.
+
+### C. Cloud image host (S3-compatible)
+- Added configurable S3-compatible image host module.
+- Added plugin settings for endpoint/bucket/region/key/public URL/path prefix.
+- Added “test upload” button in settings.
+- Added WeChat panel action: `上传图片到云端`.
+- Added auto-upload-on-copy fallback when no WeChat account selected.
+
+## Main files changed in this round
+- `plugin/src/settings.ts`
+- `plugin/src/image-host.ts` (new)
+- `plugin/src/markdown/local-file.ts`
 - `plugin/src/article-render.ts`
-- `plugin/src/base-render.ts`
+- `plugin/src/utils.ts`
+- `plugin/src/setting-tab.ts`
+- `plugin/src/ui/components/Wechat.tsx`
 - `plugin/src/markdown/code.ts`
 - `plugin/src/default-theme.ts`
 - `plugin/src/inline-css.ts`
-- `plugin/src/main.ts`
-- `plugin/src/setting-tab.ts`
-- `plugin/src/ui/components/Wechat.tsx`
-- `plugin/src/ui/components/NoteRender.tsx`
-- `plugin/src/ui/components/RedBook.tsx`
-- `plugin/src/assets.ts`
-- `plugin/src/note-preview.ts`
-- `plugin/src/widgets-modal.ts`
+- `plugin/README.md`
+- `README.md`
+- `project record/2026-03-04-requirements.md`
 
-## Build status
-- `plugin/` build passed:
-  - `npm run build`
+## Build verification
+- `cd plugin && npm install && npm run build` passed.
 
-## Next integration targets
-- Keep iterating on WeChat paste fidelity for complex list/table/callout edge cases.
-- Add a dedicated regression note set (`fixtures/`) for copy/paste validation.
-- Optional: split unsupported legacy modules into `plugin/legacy/` to reduce maintenance load.
+## Remaining risks
+- Complex table/callout/list edge cases in WeChat editor still require iterative fixture-based testing.
+- S3-compatible providers with non-standard signature behavior may require provider-specific tweaks.
+
+## Next actions
+1. Add regression fixture notes for copy fidelity.
+2. Add upload error classification and troubleshooting hints.
+3. Prepare first public release notes and demo assets.

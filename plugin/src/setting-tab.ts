@@ -27,6 +27,7 @@ import { cleanMathCache } from './markdown/math';
 import { NMPSettings } from './settings';
 import { DocModal } from './doc-modal';
 import { compareVersions } from './utils';
+import { CloudImageUploader } from './image-host';
 
 export class NoteToMpSettingTab extends PluginSettingTab {
 	plugin: NoteToMpPlugin;
@@ -424,6 +425,137 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 				button.setButtonText('测试公众号');
 			})
 		})
+		containerEl.createEl('h3', {text: '云端图床（S3 兼容）'});
+
+		new Setting(containerEl)
+			.setName('启用云端图床')
+			.setDesc('用于复制前上传本地图片到你自己的对象存储。')
+			.addToggle(toggle => {
+				toggle.setValue(this.settings.cloudImageHost.enabled);
+				toggle.onChange(async (value) => {
+					this.settings.cloudImageHost.enabled = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('复制时自动上传（未选公众号账号）')
+			.setDesc('开启后，点击复制会自动上传本地图片到云端并替换链接。')
+			.addToggle(toggle => {
+				toggle.setValue(this.settings.cloudImageHost.autoUploadOnCopyWithoutWx);
+				toggle.onChange(async (value) => {
+					this.settings.cloudImageHost.autoUploadOnCopyWithoutWx = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('Endpoint')
+			.setDesc('例如：https://<accountid>.r2.cloudflarestorage.com')
+			.addText(text => {
+				text.setPlaceholder('https://s3-compatible-endpoint')
+					.setValue(this.settings.cloudImageHost.endpoint || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.endpoint = value.trim();
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 420px;');
+			});
+
+		new Setting(containerEl)
+			.setName('Bucket')
+			.addText(text => {
+				text.setPlaceholder('your-bucket-name')
+					.setValue(this.settings.cloudImageHost.bucket || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.bucket = value.trim();
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 320px;');
+			});
+
+		new Setting(containerEl)
+			.setName('Region')
+			.setDesc('R2 可使用 auto；AWS S3 使用具体 Region。')
+			.addText(text => {
+				text.setPlaceholder('auto')
+					.setValue(this.settings.cloudImageHost.region || 'auto')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.region = value.trim() || 'auto';
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 180px;');
+			});
+
+		new Setting(containerEl)
+			.setName('AccessKey ID')
+			.addText(text => {
+				text.setPlaceholder('Access Key ID')
+					.setValue(this.settings.cloudImageHost.accessKeyId || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.accessKeyId = value.trim();
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 320px;');
+			});
+
+		new Setting(containerEl)
+			.setName('Secret Access Key')
+			.addText(text => {
+				text.setPlaceholder('Secret Access Key')
+					.setValue(this.settings.cloudImageHost.secretAccessKey || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.secretAccessKey = value.trim();
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.type = 'password';
+				text.inputEl.setAttr('style', 'width: 320px;');
+			});
+
+		new Setting(containerEl)
+			.setName('Public Base URL（可选）')
+			.setDesc('例如：https://cdn.example.com，不填则回落到 Endpoint/Bucket 直链。')
+			.addText(text => {
+				text.setPlaceholder('https://cdn.example.com')
+					.setValue(this.settings.cloudImageHost.publicBaseUrl || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.publicBaseUrl = value.trim();
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 420px;');
+			});
+
+		new Setting(containerEl)
+			.setName('Path Prefix（可选）')
+			.setDesc('上传路径前缀，默认 obsidian-to-mp。')
+			.addText(text => {
+				text.setPlaceholder('obsidian-to-mp')
+					.setValue(this.settings.cloudImageHost.pathPrefix || '')
+					.onChange(async (value) => {
+						this.settings.cloudImageHost.pathPrefix = value.trim();
+						await this.plugin.saveSettings();
+					})
+					.inputEl.setAttr('style', 'width: 220px;');
+			});
+
+		new Setting(containerEl)
+			.setName('测试云端图床')
+			.setDesc('上传 1x1 PNG 测试文件并返回 URL。')
+			.addButton(button => {
+				button.setButtonText('测试上传');
+				button.onClick(async () => {
+					button.setButtonText('测试中...');
+					try {
+						const uploader = new CloudImageUploader(this.settings.cloudImageHost);
+						const result = await uploader.uploadTestImage();
+						new Notice(`测试成功：${result.url}`);
+					} catch (error) {
+						new Notice(`测试失败：${error.message}`);
+					} finally {
+						button.setButtonText('测试上传');
+					}
+				});
+			});
 		this.checkUpdate();
 	}
 

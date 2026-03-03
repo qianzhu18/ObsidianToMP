@@ -27,7 +27,7 @@ import AssetsManager from './assets';
 import { MDRendererCallback } from './markdown/extension';
 import { MarkedParser } from './markdown/parser';
 import { LocalImageManager, LocalFile } from './markdown/local-file';
-import { debounce, removeFrontMatter, writeHtmlToClipboard } from './utils';
+import { debounce, normalizePasteHTML, removeFrontMatter, writeHtmlToClipboard } from './utils';
 import { toPng } from 'html-to-image';
 
 
@@ -107,14 +107,14 @@ export class BaseRender implements MDRendererCallback {
   async copyWithoutCSS(container: HTMLElement) {
     await this.cachedElementsToImages(container);
     if (!this.settings.isAuthKeyVaild()) {
-      const content = container.innerHTML;
+      const content = normalizePasteHTML(container.innerHTML);
       await writeHtmlToClipboard(content);
       return;
     }
 
     await this.imageManager.uploadToOSS(container, this.settings.authKey, this.app.vault);
 
-    const content = container.innerHTML;
+    const content = normalizePasteHTML(container.innerHTML);
     await writeHtmlToClipboard(content);
   }
 
