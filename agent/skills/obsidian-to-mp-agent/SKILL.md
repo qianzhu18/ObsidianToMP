@@ -1,13 +1,13 @@
 ---
 name: obsidian-to-mp-agent
-description: Generate WeChat-ready markdown into an Obsidian vault, then hand off to ObsidianToMP for preview, cloud-image replacement, and draft publishing.
+description: Generate WeChat-ready markdown into an Obsidian vault, then hand off to ObsidianToMP for preview, auto image upload on copy, and draft publishing.
 ---
 
 # ObsidianToMP Agent Skill
 
 ## When to use
 - You want an agent to write a public-account article into the local Obsidian vault.
-- You want a consistent handoff path: `CLI draft -> Obsidian preview -> hosted images -> copy or draft publish`.
+- You want a consistent handoff path: `CLI draft -> Obsidian preview -> copy(auto image upload) -> draft publish`.
 
 ## Required inputs
 - `topic`: article topic
@@ -34,7 +34,7 @@ highlight: "默认"
 ## Publishing handoff
 1. Open the generated note in Obsidian.
 2. Use ObsidianToMP preview for device checks.
-3. Click `上传+生成Hosted稿` to replace local image links and create `*.hosted.md`.
+3. Click `复制到公众号`; plugin auto-uploads local images and keeps online URLs unchanged.
 4. Final delivery:
 - Copy to WeChat editor, or
 - Sync to WeChat draft directly.
@@ -43,4 +43,3 @@ highlight: "默认"
 ```bash
 codex run "Use obsidian-to-mp-agent skill. Topic: <topic>. Audience: <audience>. Angle: <angle>. Output: <absolute-output-file>."
 ```
-

@@ -28,8 +28,8 @@
 - Added configurable S3-compatible image host module.
 - Added plugin settings for endpoint/bucket/region/key/public URL/path prefix.
 - Added “test upload” button in settings.
-- Added WeChat panel action: `上传图片到云端`.
-- Added auto-upload-on-copy fallback when no WeChat account selected.
+- Simplified to single UX path: click `复制到公众号` and auto-upload local images to cloud host.
+- Online image URLs are skipped automatically (no re-upload).
 
 ## Main files changed in this round
 - `plugin/src/settings.ts`

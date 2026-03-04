@@ -77,7 +77,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 			return;
 		}
 		try {
-			const docUrl = 'https://mp.weixin.qq.com/s/rk5CTPGr5ftly8PtYgSjCQ';
+			const docUrl = 'https://github.com/qianzhu18/ObsidianToMP';
 			for (let wx of wxInfo) {
 				const res = await wxGetToken(wx.appid, wx.secret);
 				const token = getWxAccessToken(res);
@@ -180,10 +180,11 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		this.headerEl = containerEl.createEl('div');
 		this.headerEl.style.cssText = 'display: flex;flex-direction: row;align-items: center;';
 		this.headerEl.createEl('h2', {text: 'ObsidianToMP'}).style.cssText = 'margin-right: 10px;';
-		this.headerEl.createEl('a', {text: '项目主页', attr: {href: 'https://github.com/qianzhu18/ObsidianToMP'}});
+		this.headerEl.createEl('a', {text: 'GitHub', attr: {href: 'https://github.com/qianzhu18/ObsidianToMP'}});
 		this.headerEl.createEl('div', {text: ' '}).style.cssText = 'width: 10px;';
 		const version = this.plugin.manifest.version;
 		this.headerEl.createEl('div', {text: `当前版本: v${version}`});
+		this.headerEl.createEl('div', {text: ' · by qianzhu18'});
 		this.headerEl.createEl('div', {text: ' '}).style.cssText = 'width: 10px;';
 
 		containerEl.createEl('h2', {text: '插件设置'});
@@ -345,7 +346,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					})
 				    .inputEl.setAttr('style', 'width: 520px; height: 60px;');
 		})
-		const customCSSDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin">https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin</a>';
+		const customCSSDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/blob/main/plugin/README.md">https://github.com/qianzhu18/ObsidianToMP/blob/main/plugin/README.md</a>';
 		new Setting(containerEl)
 			.setName('自定义CSS笔记')
 			.setDesc(sanitizeHTMLToDom(customCSSDoc))
@@ -360,7 +361,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 				.inputEl.setAttr('style', 'width: 320px;')
 		});
 
-		const expertDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin">https://github.com/qianzhu18/ObsidianToMP/tree/main/plugin</a>';
+		const expertDoc = '使用指南：<a href="https://github.com/qianzhu18/ObsidianToMP/blob/main/plugin/README.md">https://github.com/qianzhu18/ObsidianToMP/blob/main/plugin/README.md</a>';
 		new Setting(containerEl)
 			.setName('专家设置笔记')
 			.setDesc(sanitizeHTMLToDom(expertDoc))
@@ -428,23 +429,12 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		containerEl.createEl('h3', {text: '云端图床（S3 兼容）'});
 
 		new Setting(containerEl)
-			.setName('启用自动云端上传')
-			.setDesc('仅影响“复制时自动上传（未选公众号账号）”；手动上传和测试上传不受此开关影响。')
+			.setName('复制时自动上传本地图')
+			.setDesc('开启后，点击“复制到公众号”会自动上传本地/内嵌图片到图床；已是在线图片会自动跳过。')
 			.addToggle(toggle => {
 				toggle.setValue(this.settings.cloudImageHost.enabled);
 				toggle.onChange(async (value) => {
 					this.settings.cloudImageHost.enabled = value;
-					await this.plugin.saveSettings();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('复制时自动上传（未选公众号账号）')
-			.setDesc('开启后，点击复制会自动上传本地图片到云端并替换链接。')
-			.addToggle(toggle => {
-				toggle.setValue(this.settings.cloudImageHost.autoUploadOnCopyWithoutWx);
-				toggle.onChange(async (value) => {
-					this.settings.cloudImageHost.autoUploadOnCopyWithoutWx = value;
 					await this.plugin.saveSettings();
 				});
 			});
@@ -542,9 +532,9 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Path Prefix（可选）')
-			.setDesc('上传路径前缀，默认 obsidian-to-mp。')
+			.setDesc('上传路径前缀，默认 obsidiantomp。')
 			.addText(text => {
-				text.setPlaceholder('obsidian-to-mp')
+				text.setPlaceholder('obsidiantomp')
 					.setValue(this.settings.cloudImageHost.pathPrefix || '')
 					.onChange(async (value) => {
 						this.settings.cloudImageHost.pathPrefix = value.trim();

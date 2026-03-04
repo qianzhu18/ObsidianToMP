@@ -177,39 +177,6 @@ const WechatInternal: React.FC = () => {
     }
   };
 
-  const handleUploadCloud = async () => {
-    if (contentRef.current == null) {
-      showErr('未初始化！');
-      return;
-    }
-    try {
-      setLoading(true);
-      await renderRef.current.uploadImagesToCloud(contentRef.current!);
-      setLoading(false);
-      showMsg('已上传到云端并替换图片链接');
-    } catch (error) {
-      setLoading(false);
-      showErr('上传失败:' + error.message);
-    }
-  };
-
-  const handleUploadCloudAndCreateHosted = async () => {
-    if (activeNote == null || contentRef.current == null) {
-      showErr('未初始化！');
-      return;
-    }
-    try {
-      setLoading(true);
-      await renderRef.current.uploadImagesToCloud(contentRef.current!);
-      const result = await renderRef.current.createHostedMarkdownCopy(contentRef.current!);
-      setLoading(false);
-      showMsg(`已生成 Hosted 稿：${result.hostedPath}（替换 ${result.replaced} 处）`);
-    } catch (error) {
-      setLoading(false);
-      showErr('处理失败:' + error.message);
-    }
-  };
-
   const handleCopy = async () => {
     if (Platform.isMobile) {
       showErr('由于Obsidian API的限制，移动设备不支持复制！');
@@ -224,7 +191,7 @@ const WechatInternal: React.FC = () => {
       setLoading(true);
       await renderRef.current.copyArticle(contentRef.current!, cssContent, appid);
       setLoading(false);
-      showMsg('复制成功，快去粘贴吧！');
+      showMsg('复制成功（本地图已自动处理）');
     } catch (error) {
       setLoading(false);
       showErr('错误：' + error.message);
@@ -282,9 +249,7 @@ const WechatInternal: React.FC = () => {
           <div className={styles.LineBreak}></div>
           <button onClick={handlePost}>发文章</button>
           <button onClick={handlePostImage}>发图文</button>
-          <button onClick={handleUploadCloud}>上传图片到云端</button>
-          <button onClick={handleUploadCloudAndCreateHosted}>上传+生成Hosted稿</button>
-          <button onClick={handleCopy}>复制</button>
+          <button onClick={handleCopy}>复制到公众号</button>
           <ThemeList disabled={!!metadataTheme} />
           <button onClick={handleExport}>导出</button>
           <button onClick={onHelpClick}>帮助</button>
