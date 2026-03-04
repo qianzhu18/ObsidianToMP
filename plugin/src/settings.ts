@@ -93,7 +93,7 @@ export class NMPSettings {
             accessKeyId: '',
             secretAccessKey: '',
             publicBaseUrl: '',
-            pathPrefix: 'obsidian-to-mp',
+            pathPrefix: 'obsidiantomp',
             autoUploadOnCopyWithoutWx: true,
         };
     }

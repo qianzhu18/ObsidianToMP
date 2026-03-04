@@ -66,7 +66,7 @@ export class ArticleRender implements MDRendererCallback {
   setArticle(container:HTMLElement, article: string) {
     container.empty();
     let className = 'note-to-mp';
-    const html = `<section class="${className}" id="article-section" data-plugin="note-to-mp">${article}</section>`;
+    const html = `<section class="${className}" id="article-section" data-plugin="obsidian-to-mp">${article}</section>`;
     const doc = sanitizeHTMLToDom(html);
     if (doc.firstChild) {
       container.appendChild(doc.firstChild);
@@ -95,49 +95,6 @@ export class ArticleRender implements MDRendererCallback {
 
   getArticleText(container: HTMLElement) {
     return container.innerText.trimStart();
-  }
-
-  private replaceLocalImageLinksWithHosted(md: string, infos: { filePath: string; url: string }[]) {
-    let content = md;
-    let replaced = 0;
-    const escapeRegExp = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    const sorted = [...infos].sort((a, b) => b.filePath.length - a.filePath.length);
-    for (const info of sorted) {
-      const variants = new Set<string>();
-      const path = info.filePath.replace(/\\/g, '/');
-      const name = path.split('/').pop() || path;
-      variants.add(path);
-      variants.add(name);
-      variants.add(encodeURI(path));
-      variants.add(encodeURI(name));
-      variants.add(`./${name}`);
-      variants.add(`../${name}`);
-
-      for (const variant of variants) {
-        const escaped = escapeRegExp(variant);
-
-        const wikiPattern = new RegExp(`!\\[\\[${escaped}(?:\\|[^\\]]*)?\\]\\]`, 'g');
-        content = content.replace(wikiPattern, () => {
-          replaced += 1;
-          return `![](${info.url})`;
-        });
-
-        const mdPattern = new RegExp(`!\\[([^\\]]*)\\]\\(${escaped}(?:\\s+"[^"]*")?\\)`, 'g');
-        content = content.replace(mdPattern, (_, alt: string) => {
-          replaced += 1;
-          return `![${alt}](${info.url})`;
-        });
-
-        const mdAnglePattern = new RegExp(`!\\[([^\\]]*)\\]\\(<${escaped}>(?:\\s+"[^"]*")?\\)`, 'g');
-        content = content.replace(mdAnglePattern, (_, alt: string) => {
-          replaced += 1;
-          return `![${alt}](${info.url})`;
-        });
-      }
-    }
-
-    return { content, replaced };
   }
 
   errorContent(error: any) {
@@ -326,17 +283,40 @@ export class ArticleRender implements MDRendererCallback {
   }
 
   async copyArticle(container: HTMLElement, css: string, appid: string | null) {
-    if (appid) {
+    const cloudEnabled = this.settings.cloudImageHost.enabled;
+    const cloudConfigured = this.isCloudHostConfigured();
+
+    if (cloudEnabled && cloudConfigured) {
+      // Copy should upload only local/data images. Existing online links are kept as-is.
+      await this.uploadImagesToCloud(container, { skipRemoteImages: true });
+    } else if (appid) {
       await this.uploadImages(appid, container);
-    }
-    else if (this.settings.cloudImageHost.enabled && this.settings.cloudImageHost.autoUploadOnCopyWithoutWx) {
-      await this.uploadImagesToCloud(container);
+    } else if (cloudEnabled && !cloudConfigured) {
+      throw new Error('云端图床已启用但配置不完整，请补全 Endpoint/Bucket/AccessKey/Secret，或先关闭该开关');
     }
     const content = this.getArticleContent(container, css);
     await writeHtmlToClipboard(content);
   }
 
-  async uploadImagesToCloud(container: HTMLElement) {
+  private isCloudHostConfigured() {
+    const conf = this.settings.cloudImageHost;
+    return !!(
+      conf.endpoint?.trim()
+      && conf.bucket?.trim()
+      && conf.accessKeyId?.trim()
+      && conf.secretAccessKey?.trim()
+    );
+  }
+
+  async uploadImagesToCloud(container: HTMLElement, options: { skipRemoteImages?: boolean } = {}) {
+    if (!this.settings.cloudImageHost.enabled) {
+      throw new Error('云端图床未启用，请先在设置中开启');
+    }
+    if (!this.isCloudHostConfigured()) {
+      throw new Error('云端图床配置不完整，请补全 Endpoint/Bucket/AccessKey/Secret');
+    }
+
+    const skipRemoteImages = !!options.skipRemoteImages;
     const uploader = new CloudImageUploader(this.settings.cloudImageHost);
     await this.cachedElementsToImages(container);
     await this.imageManager.uploadImagesByHandler(
@@ -347,41 +327,10 @@ export class ArticleRender implements MDRendererCallback {
         return result.url;
       },
       {
-        skipRemoteUrl: (url) => uploader.isManagedUrl(url),
+        skipRemoteUrl: (url) => skipRemoteImages || uploader.isManagedUrl(url),
       },
     );
     this.imagesReplaced = true;
-  }
-
-  async createHostedMarkdownCopy(container: HTMLElement) {
-    if (!this.note) {
-      throw new Error('当前没有打开笔记');
-    }
-
-    const source = await this.app.vault.cachedRead(this.note);
-    const infos = this.imageManager
-      .getImageInfos(container)
-      .filter((item) => !!item.filePath && !!item.url && item.url.startsWith('http'))
-      .map((item) => ({ filePath: item.filePath, url: item.url! }));
-
-    if (infos.length === 0) {
-      throw new Error('未找到可替换的本地图片，请先执行“上传图片到云端”');
-    }
-
-    const { content, replaced } = this.replaceLocalImageLinksWithHosted(source, infos);
-    if (replaced === 0) {
-      throw new Error('已上传图片，但未在 Markdown 原文中匹配到可替换的图片链接');
-    }
-
-    const hostedPath = this.note.path.replace(/\.md$/i, '') + '.hosted.md';
-    const existing = this.app.vault.getFileByPath(hostedPath) as TFile | null;
-    if (existing) {
-      await this.app.vault.modify(existing, content);
-    } else {
-      await this.app.vault.create(hostedPath, content);
-    }
-
-    return { hostedPath, replaced, updated: !!existing };
   }
 
   getSecret(appid: string) {

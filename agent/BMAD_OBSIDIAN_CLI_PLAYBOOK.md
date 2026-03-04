@@ -41,17 +41,23 @@ obsidian commands filter=obsidian-to-mp
 
 如果命令不可用，说明 CLI 还未注册成功或版本不满足。
 
-## 4. 绑定到你的 Vault（示例路径）
+## 4. 绑定到你的 Vault（示例）
 你的实验库路径示例：
 
 ```text
 /Users/mac/Downloads/code/obsidian publish/测试/测试
 ```
 
-使用命令时显式指定 vault，避免误操作：
+先确认 Vault 名称（CLI 用名称，不是路径）：
 
 ```bash
-obsidian vault="/Users/mac/Downloads/code/obsidian publish/测试/测试" daily
+obsidian vaults verbose
+```
+
+你当前的 Vault 名称是 `测试`，使用命令时显式指定：
+
+```bash
+obsidian vault="测试" daily
 ```
 
 ## 5. 开发流程（推荐）
@@ -68,19 +74,19 @@ obsidian vault="/Users/mac/Downloads/code/obsidian publish/测试/测试" daily
 
 4. ObsidianToMP 完成发布前动作  
 - 多端预览
-- 上传图床并生成 `*.hosted.md`
+- 点击“复制到公众号”自动上传本地图片（在线图片自动跳过）
 - 复制到公众号或发草稿
 
 ## 6. 最小自动化命令链
 ```bash
 # 1) 重载插件（每次 build 后）
-obsidian vault="/Users/mac/Downloads/code/obsidian publish/测试/测试" plugin:reload id=obsidian-to-mp
+obsidian vault="测试" plugin:reload id=obsidian-to-mp
 
 # 2) 查看插件命令 ID（首次做）
-obsidian vault="/Users/mac/Downloads/code/obsidian publish/测试/测试" commands filter=obsidian-to-mp
+obsidian vault="测试" commands filter=obsidian-to-mp
 
 # 3) 执行发布预览命令（替换成第2步返回的真实 id）
-obsidian vault="/Users/mac/Downloads/code/obsidian publish/测试/测试" command id="<actual-command-id>"
+obsidian vault="测试" command id="<actual-command-id>"
 ```
 
 ## 7. 推荐分支模型
@@ -101,6 +107,8 @@ CLI 未安装/未注册；先在 Obsidian 设置中启用 CLI。
 2. `commands filter=obsidian-to-mp` 无结果  
 插件没启用或 vault 指错。
 
-3. 图床上传 403  
-优先检查 OSS URL 风格、Bucket ACL/Policy（上传成功不等于可公开读）。
+3. `Vault not found`  
+大多是把“路径”当成 `vault=` 传入，先执行 `obsidian vaults verbose`，改用 Vault 名称。
 
+4. 图床上传 403  
+优先检查 OSS URL 风格、Bucket ACL/Policy（上传成功不等于可公开读）。
