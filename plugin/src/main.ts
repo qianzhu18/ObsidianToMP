@@ -41,9 +41,14 @@ export default class NoteToMpPlugin extends Plugin {
 	}
 
 	async loadResource() {
-		await this.loadSettings();
-		await this.assetsManager.loadAssets();
-		usePluginStore.getState().setResourceLoaded(true);
+		try {
+			await this.loadSettings();
+			await this.assetsManager.loadAssets();
+			usePluginStore.getState().setResourceLoaded(true);
+		} catch (error) {
+			console.error('[ObsidianToMP] loadResource failed', error);
+			new Notice('ObsidianToMP 资源加载失败，请在设置页重新下载主题资源后重试。');
+		}
 	}
 
 	async onload() {
