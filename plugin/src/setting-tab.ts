@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-import { App, TextAreaComponent, PluginSettingTab, Setting, Notice, sanitizeHTMLToDom } from 'obsidian';
+import { App, TextAreaComponent, PluginSettingTab, Setting, Notice, sanitizeHTMLToDom, requestUrl } from 'obsidian';
 import NoteToMpPlugin from './main';
 import { wxGetToken, getWxAccessToken, requestLatestVersion } from './weixin-api';
 import { cleanMathCache } from './markdown/math';
@@ -70,6 +70,30 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		return res;
 	}
 
+	private async detectPublicIP(): Promise<string> {
+		const urls = [
+			'https://api.ipify.org',
+			'https://ifconfig.me/ip',
+			'https://ipinfo.io/ip',
+		];
+		for (const url of urls) {
+			try {
+				const res = await requestUrl({
+					url,
+					method: 'GET',
+					throw: false,
+				});
+				const ip = (res.text || '').trim();
+				if (ip.length > 0) {
+					return ip;
+				}
+			} catch (error) {
+				// ignore and try next endpoint
+			}
+		}
+		return '';
+	}
+
 	async testWXInfo() {
 	    const wxInfo = this.settings.wxInfo;
 		if (wxInfo.length == 0) {
@@ -92,7 +116,11 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 						content = 'AppSecret错误，请检查或者重置，详细操作步骤请参考下方文档';
 					}
 					else if (code === 40164) {
+						const currentIp = await this.detectPublicIP();
 						content = 'IP地址不在白名单中，请将当前设备出口 IP 添加到公众号后台白名单后重试。';
+						if (currentIp) {
+							content += `\n\n检测到当前出口 IP：${currentIp}`;
+						}
 					}
 					const modal = new DocModal(this.app, `${wx.name} 测试失败`, content, docUrl);
 					modal.open();
@@ -312,8 +340,9 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 			    button.setButtonText('下载');
 				button.onClick(async () => {
 					button.setButtonText('下载中...');
-					await this.plugin.assetsManager.downloadThemes();
-					button.setButtonText('下载完成');
+					const ok = await this.plugin.assetsManager.downloadThemes();
+					button.setButtonText(ok ? '下载完成' : '下载失败');
+					window.setTimeout(() => button.setButtonText('下载'), 1600);
 				});
 			})
 			.addButton(button => {
@@ -545,7 +574,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('测试云端图床')
-			.setDesc('上传 1x1 PNG 测试文件并返回 URL。')
+			.setDesc('上传 1x1 PNG 并校验公网可读；若提示 AccessDenied/403，请检查 Bucket ACL 或 Public Base URL。')
 			.addButton(button => {
 				button.setButtonText('测试上传');
 				button.onClick(async () => {

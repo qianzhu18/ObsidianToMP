@@ -60,6 +60,9 @@ export default class AssetsManager {
     wasmPath: string;
     expertSettings: ExpertSettings;
     isLoaded: boolean = false;
+    private autoDownloadTried: boolean = false;
+    private noticeMissingThemesShown: boolean = false;
+    private noticeMissingHighlightsShown: boolean = false;
 
     private static instance: AssetsManager;
 
@@ -91,7 +94,10 @@ export default class AssetsManager {
 
     }
 
-    async loadAssets() {
+    async loadAssets(skipEnsureAssets: boolean = false) {
+        if (!skipEnsureAssets) {
+            await this.ensureAssets();
+        }
         await this.loadThemes();
         await this.loadHighlights();
         await this.loadCustomCSS();
@@ -99,11 +105,33 @@ export default class AssetsManager {
         this.isLoaded = true;
     }
 
+    private async ensureAssets() {
+        if (this.autoDownloadTried) {
+            return;
+        }
+        this.autoDownloadTried = true;
+        if (await this.hasCoreAssets()) {
+            return;
+        }
+        const ok = await this.downloadThemesInternal(true);
+        if (ok) {
+            new Notice('已自动下载主题与高亮资源。');
+        }
+    }
+
+    private async hasCoreAssets() {
+        return await this.app.vault.adapter.exists(this.themeCfg) &&
+            await this.app.vault.adapter.exists(this.hilightCfg);
+    }
+
     async loadThemes() {
         try {
             const builtinThemes: Theme[] = [...raphaelBuiltinThemes];
             if (!await this.app.vault.adapter.exists(this.themeCfg)) {
-                new Notice('未检测到外部主题资源，已加载内置主题。');
+                if (!this.noticeMissingThemesShown) {
+                    this.noticeMissingThemesShown = true;
+                    new Notice('未检测到外部主题资源，已加载内置主题。');
+                }
                 this.themes = [this.defaultTheme, ...builtinThemes];
                 return;
             }
@@ -199,7 +227,10 @@ export default class AssetsManager {
             const defaultHighlight = {name: '默认', url: '', css: DefaultHighlight};
             this.highlights = [defaultHighlight];
             if (!await this.app.vault.adapter.exists(this.hilightCfg)) {
-                new Notice('高亮资源未下载，请前往设置下载！');
+                if (!this.noticeMissingHighlightsShown) {
+                    this.noticeMissingHighlightsShown = true;
+                    new Notice('高亮资源缺失，当前使用默认高亮。');
+                }
                 return;
             }
 
@@ -266,9 +297,34 @@ export default class AssetsManager {
         }
     }
 
-    getThemeURL() {
-        const version = this.manifest.version;
-        return `https://github.com/qianzhu18/ObsidianToMP/releases/download/${version}/assets.zip`;
+    getThemeURLs() {
+        const version = this.manifest.version.trim();
+        const withV = version.startsWith('v') ? version : `v${version}`;
+        const noV = version.startsWith('v') ? version.slice(1) : version;
+        return [
+            'https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip',
+            `https://github.com/qianzhu18/ObsidianToMP/releases/download/${withV}/assets.zip`,
+            `https://github.com/qianzhu18/ObsidianToMP/releases/download/${noV}/assets.zip`,
+        ];
+    }
+
+    private async fetchThemeArchive() {
+        const urls = this.getThemeURLs();
+        let lastError = 'unknown error';
+        for (const url of urls) {
+            try {
+                const res = await requestUrl(url);
+                const data = res.arrayBuffer;
+                if (!data || data.byteLength === 0) {
+                    throw new Error('empty archive');
+                }
+                return { url, data };
+            } catch (error) {
+                lastError = error instanceof Error ? error.message : String(error);
+                console.warn(`[ObsidianToMP] theme download failed from ${url}: ${lastError}`);
+            }
+        }
+        throw new Error(`所有资源地址下载失败（${lastError}）`);
     }
 
     async getStyle() {
@@ -284,20 +340,37 @@ export default class AssetsManager {
     }
 
     async downloadThemes() {
+        return await this.downloadThemesInternal(false);
+    }
+
+    private async downloadThemesInternal(silent: boolean) {
         try {
-            if (await this.app.vault.adapter.exists(this.themeCfg)) {
-                new Notice('主题资源已存在！')
-                return;
+            if (await this.hasCoreAssets()) {
+                if (!silent) {
+                    new Notice('主题与高亮资源已存在。');
+                }
+                await this.loadAssets(true);
+                return true;
             }
-            const res = await requestUrl(this.getThemeURL());
-            const data = res.arrayBuffer;
+            const { data, url } = await this.fetchThemeArchive();
             await this.unzip(new Blob([data]));
-            await this.loadAssets();
-            new Notice('主题下载完成！');
+            await this.loadAssets(true);
+            this.noticeMissingThemesShown = false;
+            this.noticeMissingHighlightsShown = false;
+            console.info(`[ObsidianToMP] assets downloaded from ${url}`);
+            if (!silent) {
+                new Notice('主题下载完成！');
+            }
+            return true;
         } catch (error) {
             console.error(error);
-            await this.removeThemes();
-            new Notice('主题下载失败, 请检查网络！');
+            await this.removeThemeArtifactsQuietly();
+            await this.loadAssets(true);
+            if (!silent) {
+                const msg = error instanceof Error ? error.message : String(error);
+                new Notice(`主题下载失败：${msg}`);
+            }
+            return false;
         }
     }
 
@@ -348,6 +421,26 @@ export default class AssetsManager {
         } catch (error) {
             console.error(error);
             new Notice('清空主题失败！');
+        }
+    }
+
+    private async removeThemeArtifactsQuietly() {
+        try {
+            const adapter = this.app.vault.adapter;
+            if (await adapter.exists(this.themeCfg)) {
+                await adapter.remove(this.themeCfg);
+            }
+            if (await adapter.exists(this.hilightCfg)) {
+                await adapter.remove(this.hilightCfg);
+            }
+            if (await adapter.exists(this.themesPath)) {
+                await adapter.rmdir(this.themesPath, true);
+            }
+            if (await adapter.exists(this.hilightPath)) {
+                await adapter.rmdir(this.hilightPath, true);
+            }
+        } catch (error) {
+            console.warn('[ObsidianToMP] cleanup partial assets failed', error);
         }
     }
 

@@ -27,13 +27,27 @@ npm run build
 - `manifest.json`
 
 ## 安装到 Obsidian
-把本目录链接到你的 Vault 插件目录：
+优先使用零代码安装：
 
+1. BRAT 安装（推荐）
+- 安装并启用 `BRAT`
+- 在 BRAT 中点击 `Add Beta Plugin`
+- 输入仓库：`qianzhu18/ObsidianToMP`
+- 安装完成后启用 `ObsidianToMP`
+- 首次启用会自动下载主题/高亮资源（`assets.zip`）
+- 若提示 `no manifest.json`：删除失败记录 -> 重启 Obsidian -> 重新添加
+
+2. Release 手动安装（最稳）
+- 下载：`https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.0`
+- 解压 `obsidian-to-mp-v1.0.0.zip` 到 `<Vault>/.obsidian/plugins/obsidian-to-mp`
+- 确认目录内有：`main.js`、`styles.css`、`manifest.json`
+- 重启并启用插件
+
+3. 本地开发安装（仅开发者）
 ```bash
 ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugins/obsidian-to-mp"
 ```
-
-在 Obsidian 里启用 `ObsidianToMP` 即可。
+然后在 Obsidian 里启用 `ObsidianToMP`。
 
 ## 云图床说明
 插件设置里可配置 S3 兼容图床：
@@ -46,6 +60,12 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 - Path Prefix（可选）
 
 复制时会自动上传本地/内嵌图片到图床，已是在线图片会自动跳过，不需要额外按钮。
+
+## 主题/高亮资源故障排查
+1. 打开插件设置，点击 `获取更多主题 -> 下载`。
+2. 看到“下载完成”后，重新打开预览视图。
+3. 手动验证资源地址可访问：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
+4. 如果外部网络限制 GitHub 下载，请切换网络后重试。
 
 ## 分支策略
 - `main`: 基线与汇总
