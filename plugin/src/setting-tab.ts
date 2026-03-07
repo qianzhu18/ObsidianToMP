@@ -35,12 +35,14 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 	wxTextArea: TextAreaComponent|null;
 	settings: NMPSettings;
 	headerEl: HTMLElement|null;
+	assetsStatusEl: HTMLElement|null;
 
 	constructor(app: App, plugin: NoteToMpPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 		this.settings = NMPSettings.getInstance();
 		this.wxInfo = this.parseWXInfo();
+		this.assetsStatusEl = null;
 	}
 
 	maskSecret(secret: string) {
@@ -198,6 +200,18 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		this.displayWXInfo('')
 	}
 
+	private async refreshAssetsStatus() {
+		if (!this.assetsStatusEl) {
+			return;
+		}
+		this.assetsStatusEl.setText('主题/高亮资源状态：检查中...');
+		const status = await this.plugin.assetsManager.getAssetsStatus();
+		const ready = status.ready ? '完整' : '缺失';
+		this.assetsStatusEl.setText(
+			`主题/高亮资源状态：${ready}（主题 ${status.themeCssReady}/${status.themeCount}，高亮 ${status.highlightCssReady}/${status.highlightCount}，WASM ${status.hasWasm ? '已就绪' : '缺失'}）`
+		);
+	}
+
 	display() {
 		const {containerEl} = this;
 
@@ -216,6 +230,11 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		this.headerEl.createEl('div', {text: ' '}).style.cssText = 'width: 10px;';
 
 		containerEl.createEl('h2', {text: '插件设置'});
+		this.assetsStatusEl = containerEl.createEl('div', {
+			text: '主题/高亮资源状态：检查中...',
+		});
+		this.assetsStatusEl.style.cssText = 'margin: 0 0 12px 0; color: var(--text-muted);';
+		void this.refreshAssetsStatus();
 
 		new Setting(containerEl)
 			.setName('默认样式')
@@ -342,7 +361,18 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					button.setButtonText('下载中...');
 					const ok = await this.plugin.assetsManager.downloadThemes();
 					button.setButtonText(ok ? '下载完成' : '下载失败');
+					await this.refreshAssetsStatus();
 					window.setTimeout(() => button.setButtonText('下载'), 1600);
+				});
+			})
+			.addButton(button => {
+				button.setButtonText('强制重下');
+				button.onClick(async () => {
+					button.setButtonText('重下中...');
+					const ok = await this.plugin.assetsManager.downloadThemes(true);
+					button.setButtonText(ok ? '重下完成' : '重下失败');
+					await this.refreshAssetsStatus();
+					window.setTimeout(() => button.setButtonText('强制重下'), 1600);
 				});
 			})
 			.addButton(button => {
@@ -360,6 +390,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					await this.plugin.assetsManager.removeThemes();
 					this.settings.resetStyelAndHighlight();
 					await this.plugin.saveSettings();
+					await this.refreshAssetsStatus();
 				});
 			})
 		new Setting(containerEl)

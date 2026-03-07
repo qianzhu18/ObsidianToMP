@@ -44,6 +44,15 @@ export interface Highlight {
     css: string
 }
 
+export interface AssetsStatus {
+    ready: boolean
+    themeCount: number
+    highlightCount: number
+    themeCssReady: number
+    highlightCssReady: number
+    hasWasm: boolean
+}
+
 export default class AssetsManager {
     app: App;
     defaultTheme: Theme = DefaultTheme;
@@ -120,8 +129,72 @@ export default class AssetsManager {
     }
 
     private async hasCoreAssets() {
-        return await this.app.vault.adapter.exists(this.themeCfg) &&
-            await this.app.vault.adapter.exists(this.hilightCfg);
+        return (await this.getAssetsStatus()).ready;
+    }
+
+    private async loadJsonArray(path: string) {
+        if (!await this.app.vault.adapter.exists(path)) {
+            return [];
+        }
+        const data = await this.app.vault.adapter.read(path);
+        if (!data) {
+            return [];
+        }
+        try {
+            const parsed = JSON.parse(data);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.warn(`[ObsidianToMP] invalid json at ${path}`);
+            return [];
+        }
+    }
+
+    async getAssetsStatus(): Promise<AssetsStatus> {
+        const hasThemeCfg = await this.app.vault.adapter.exists(this.themeCfg);
+        const hasHighlightCfg = await this.app.vault.adapter.exists(this.hilightCfg);
+        const hasWasm = await this.app.vault.adapter.exists(this.wasmPath);
+
+        const themes = hasThemeCfg ? await this.loadJsonArray(this.themeCfg) : [];
+        const highlights = hasHighlightCfg ? await this.loadJsonArray(this.hilightCfg) : [];
+
+        let themeCssReady = 0;
+        for (const theme of themes) {
+            const className = typeof theme?.className === 'string' ? theme.className : '';
+            if (!className) {
+                continue;
+            }
+            if (await this.app.vault.adapter.exists(this.themesPath + className + '.css')) {
+                themeCssReady += 1;
+            }
+        }
+
+        let highlightCssReady = 0;
+        for (const highlight of highlights) {
+            const name = typeof highlight?.name === 'string' ? highlight.name : '';
+            if (!name) {
+                continue;
+            }
+            if (await this.app.vault.adapter.exists(this.hilightPath + name + '.css')) {
+                highlightCssReady += 1;
+            }
+        }
+
+        const ready = hasThemeCfg &&
+            hasHighlightCfg &&
+            hasWasm &&
+            themes.length > 0 &&
+            highlights.length > 0 &&
+            themeCssReady === themes.length &&
+            highlightCssReady === highlights.length;
+
+        return {
+            ready,
+            themeCount: themes.length,
+            highlightCount: highlights.length,
+            themeCssReady,
+            highlightCssReady,
+            hasWasm,
+        };
     }
 
     async loadThemes() {
@@ -151,6 +224,9 @@ export default class AssetsManager {
         try {
             for (const theme of themes) {
                 const cssFile = this.themesPath + theme.className + '.css';
+                if (!await this.app.vault.adapter.exists(cssFile)) {
+                    continue;
+                }
                 const cssContent = await this.app.vault.adapter.read(cssFile);
                 if (cssContent) {
                     theme.css = cssContent;
@@ -239,6 +315,9 @@ export default class AssetsManager {
                 const items = JSON.parse(data);
                 for (const item of items) {
                     const cssFile = this.hilightPath + item.name + '.css';
+                    if (!await this.app.vault.adapter.exists(cssFile)) {
+                        continue;
+                    }
                     const cssContent = await this.app.vault.adapter.read(cssFile);
                     this.highlights.push({name: item.name, url: item.url, css: cssContent});
                 }
@@ -339,13 +418,16 @@ export default class AssetsManager {
         return '';
     }
 
-    async downloadThemes() {
-        return await this.downloadThemesInternal(false);
+    async downloadThemes(force: boolean = false) {
+        return await this.downloadThemesInternal(false, force);
     }
 
-    private async downloadThemesInternal(silent: boolean) {
+    private async downloadThemesInternal(silent: boolean, force: boolean = false) {
         try {
-            if (await this.hasCoreAssets()) {
+            if (force) {
+                await this.removeThemeArtifactsQuietly();
+            }
+            if (!force && await this.hasCoreAssets()) {
                 if (!silent) {
                     new Notice('主题与高亮资源已存在。');
                 }

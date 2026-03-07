@@ -94,8 +94,9 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 - 如果提示“高亮资源未下载”或“外部主题资源未检测到”：
 1. 进入插件设置，点击 `获取更多主题 -> 下载`。
 2. 下载完成后重启预览页（关闭再打开“复制到公众号”视图）。
-3. 若仍失败，浏览器直接打开并确认可下载：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
-4. 公司网络受限时，建议切换网络后重试（移动热点通常可快速验证）。
+3. 如果资源目录已损坏或数量不完整，点击 `强制重下` 覆盖修复。
+4. 若仍失败，浏览器直接打开并确认可下载：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
+5. 公司网络受限时，建议切换网络后重试（移动热点通常可快速验证）。
 
 ## 云图床配置（S3 兼容）
 在插件设置中填写：
