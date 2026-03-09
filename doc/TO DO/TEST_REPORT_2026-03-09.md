@@ -69,3 +69,8 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 - The hotfix compiles, bundles, and passes clean npm install/build checks.
 - The most likely startup crash trigger (eager PostCSS runtime import) has been removed.
 - Next mandatory step is BRAT reinstall validation from merged `main` and published `v1.0.1`.
+
+## Delivery record
+1. Commit pushed: `c85f244` on `codex/agent-exploration`.
+2. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/6`.
+3. `origin/main` now includes merge commit `a50e820`.
