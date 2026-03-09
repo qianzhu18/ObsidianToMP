@@ -23,15 +23,21 @@ Latest captured error:
 3. Bump plugin version to `1.0.3`.
 4. Rebuild distributables (`main.js`, `styles.css`).
 
-## Pending release tasks
-1. Merge v1.0.3 fix commit to GitHub `main`.
-2. Publish `v1.0.3` release with assets:
+## Delivery status (already done)
+1. PR `#15` merged to `main`.
+2. Release published: `v1.0.3` (Latest).
+3. Release assets uploaded:
    - `main.js`
    - `styles.css`
    - `manifest.json`
    - `obsidian-to-mp-v1.0.3.zip`
    - `assets.zip`
-3. Reinstall via BRAT and confirm version resolves to `v1.0.3`.
+
+## Pending validation tasks
+1. Reinstall via BRAT and confirm installed version resolves to `v1.0.3`.
+2. Verify plugin can be enabled and stays enabled after Obsidian restart.
+3. Verify command `复制到公众号` opens preview panel.
+4. If still failing, provide first console red stack trace for next hotfix.
 
 ## Required acceptance results
 1. No toast: `"obsidian-to-mp" 插件加载失败。`
