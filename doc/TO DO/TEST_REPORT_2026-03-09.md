@@ -70,6 +70,15 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
   - `plugin/manifest.json` exists on `origin/main`
   - `plugin/src/styles.css` exists on `origin/main`
 
+### T7. Release availability check
+- Command:
+  - `gh release list --repo qianzhu18/ObsidianToMP --limit 10`
+  - `gh release view v1.0.1 --repo qianzhu18/ObsidianToMP --json assets,url,publishedAt`
+- Result: PASS
+- Evidence:
+  - `v1.0.1` is published and marked as Latest release.
+  - Release assets include `main.js`, `styles.css`, `manifest.json`, `obsidian-to-mp-v1.0.1.zip`, and `assets.zip`.
+
 ## Known gaps
 1. No in-app Obsidian GUI runtime test was executed in this terminal session.
 2. BRAT reinstall test on a fresh vault still needs manual validation after pushing/merging hotfix.
@@ -88,3 +97,7 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 4. Commit pushed: `031bdb6` on `codex/agent-exploration`.
 5. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/8`.
 6. `origin/main` now includes merge commit `4a4cd09`.
+7. Commit pushed: `2ab954d` on `codex/agent-exploration`.
+8. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/10`.
+9. `origin/main` now includes merge commit `5891cb0`.
+10. Release published: `https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.1`.

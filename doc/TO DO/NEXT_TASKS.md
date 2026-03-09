@@ -15,6 +15,9 @@ Updated at: 2026-03-09 (Asia/Shanghai)
   - PR `#6` merged to `main`
   - Commit `031bdb6` pushed to `codex/agent-exploration`
   - PR `#8` merged to `main`
+  - Commit `2ab954d` pushed to `codex/agent-exploration`
+  - PR `#10` merged to `main`
+  - Release published: `v1.0.1`
 
 ## Completed in this round
 1. Synced remote refs and verified branch state.
@@ -23,14 +26,14 @@ Updated at: 2026-03-09 (Asia/Shanghai)
 4. Added structured test report under `doc/TO DO/TEST_REPORT_2026-03-09.md`.
 5. Created PR and merged fix into `main`.
 6. Fixed BRAT artifact gap and merged to `main` (`PR #8`).
+7. Published GitHub release `v1.0.1` with install assets.
 
 ## Pending tasks (must complete before public rollout)
-1. Publish `v1.0.1` release assets (`main.js`, `styles.css`, `manifest.json`, and `assets.zip` if needed).
-2. Reinstall via BRAT and verify no "插件加载失败" on fresh vault.
-3. Validate desktop and mobile behavior separately:
+1. Reinstall via BRAT and verify no "插件加载失败" on fresh vault.
+2. Validate desktop and mobile behavior separately:
    - Desktop: copy/paste + draft publish flow.
    - Mobile: plugin loads, settings panel opens, no startup crash.
-4. Update top-level README release section to reflect `v1.0.1`.
+3. Update top-level README release section to reflect `v1.0.1`.
 
 ## Risk notes
 - There are existing uncommitted local changes in:
