@@ -47,15 +47,28 @@ User provided runtime error:
   - source and bundle now use `obsidian-to-mp-note-preview`
   - legacy generic id is no longer used as registered view type
 
+### T4. Release availability check
+- Command:
+  - `gh release list --repo qianzhu18/ObsidianToMP --limit 5`
+- Result: PASS
+- Evidence:
+  - `v1.0.3` exists and is marked as Latest.
+
 ## Test conclusion
 - The reported conflict point has a direct targeted fix.
 - Build and bundle generation pass with the new unique view type id.
-- Next step is publish + user-side reinstall verification on `v1.0.3`.
+- Release `v1.0.3` is already published.
+- Next step is user-side reinstall verification on `v1.0.3`.
 
 ## Pending validation (not executed in this terminal)
 1. BRAT reinstall on user machine.
 2. Obsidian GUI runtime smoke test after enabling plugin.
 3. Confirm no startup failure toast and preview command availability.
+
+## Delivery record
+1. PR merged: `#15` (view type collision fix).
+2. Main branch includes merged commit from PR `#15`.
+3. Release published: `https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.3`.
 
 ## Pass criteria for closure
 1. Plugin loads without `register existing view type` error.
