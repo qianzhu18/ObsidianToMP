@@ -8,11 +8,10 @@
 # npm
 node_modules
 
-# Don't include the compiled main.js file in the repo.
-# They should be uploaded to GitHub releases instead.
-main.js
+# Keep BRAT-installable distributables (`main.js`, `styles.css`) in repo.
+
+# Build intermediate file.
 main.css
-styles.css
 
 # Exclude sourcemaps
 *.map
