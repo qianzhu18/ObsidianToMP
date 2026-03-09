@@ -12,111 +12,86 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 
 ## Code changes under test
 1. `plugin/src/utils.ts`
-   - Replaced eager `postcss` import with lazy runtime loading.
-   - Added fallback error handling in `applyCSS`.
-2. Safe-boot startup patch in `plugin/src/main.ts`
-   - lazy-load high-risk modules at runtime (`note-preview`, `setting-tab`, `note-pub`, `assets`, `styles`)
-   - fallback preview view on module load failure
-   - explicit Notice + console logs instead of startup crash
-3. Version metadata bump to `1.0.2`
-   - `plugin/manifest.json`
-   - `plugin/package.json`
-   - `plugin/versions.json`
+   - lazy-load PostCSS runtime; avoid eager module-load crash surface.
+2. `plugin/src/main.ts`
+   - safe-boot startup path with lazy module loading.
+   - fallback preview view + explicit Notice diagnostics on module failures.
+3. Distribution and versioning
+   - tracked BRAT-required files in repo
+   - version bump to `1.0.2`
+   - release `v1.0.2` assets published
 
 ## Executed tests
 
-### T1. TypeScript + bundle build (workspace)
+### T1. TypeScript + bundle build
 - Command:
   - `cd plugin && npm run build`
 - Result: PASS
 - Evidence:
-  - Build completed and emitted `Copied main.css → styles.css`
+  - Build completed and emitted `Copied main.css → styles.css`.
 
 ### T2. Lockfile consistency + rebuild
 - Command:
   - `cd plugin && npm install --package-lock-only && npm run build`
 - Result: PASS
 - Evidence:
-  - No dependency resolution error
-  - Build completed successfully
+  - No dependency resolution error.
 
-### T3. Clean-room npm install/build
+### T3. Clean-room build reproducibility check
 - Command:
-  - Copy plugin folder to temp dir (without `node_modules`)
-  - `npm ci --no-audit --no-fund`
+  - clone clean `main` to temp dir
+  - `npm ci`
   - `npm run build`
-- Result: PASS
+  - compare tracked output drift
+- Result: PASS (after fix)
 - Evidence:
-  - Build completed and emitted `Copied main.css → styles.css`
+  - tracked `main.js` aligned to clean-source build in latest merge.
 
-### T4. Bundle startup-risk static check
+### T4. Startup-risk static scan
 - Check:
-  - Verify PostCSS loader is no longer executed at module top-level.
+  - PostCSS runtime no longer eager-loaded at module top-level.
 - Result: PASS
-- Evidence:
-  - `plugin/main.js` contains `require_postcss()` only inside `getPostcss()`.
-  - No eager top-level execution path observed for PostCSS runtime module.
 
 ### T5. Branch sync verification
 - Command:
   - `git rev-list --left-right --count main...origin/main`
-- Result: INFO
-- Evidence:
-  - Output: `0 0` (local `main` and `origin/main` are aligned)
-
-### T6. BRAT distribution file check on remote `main`
-- Command:
-  - `git ls-tree -r --name-only origin/main` and verify required files
 - Result: PASS
 - Evidence:
-  - `plugin/main.js` exists on `origin/main`
-  - `plugin/styles.css` exists on `origin/main`
-  - `plugin/manifest.json` exists on `origin/main`
-  - `plugin/src/styles.css` exists on `origin/main`
+  - output `0 0`.
 
-### T7. Release availability check
+### T6. BRAT distribution file presence on `main`
+- Command:
+  - `git ls-tree -r --name-only origin/main`
+- Result: PASS
+- Evidence:
+  - `plugin/main.js`, `plugin/styles.css`, `plugin/manifest.json`, `plugin/src/styles.css` all exist on `origin/main`.
+
+### T7. Release availability check (`v1.0.2`)
 - Command:
   - `gh release list --repo qianzhu18/ObsidianToMP --limit 10`
-  - `gh release view v1.0.1 --repo qianzhu18/ObsidianToMP --json assets,url,publishedAt`
+  - `gh release view v1.0.2 --repo qianzhu18/ObsidianToMP --json assets,url,publishedAt`
 - Result: PASS
 - Evidence:
-  - `v1.0.1` is published and marked as Latest release.
-  - Release assets include `main.js`, `styles.css`, `manifest.json`, `obsidian-to-mp-v1.0.1.zip`, and `assets.zip`.
-
-### T8. Safe-boot patch build verification
-- Command:
-  - `cd plugin && npm run build`
-- Result: PASS
-- Evidence:
-  - Build completed after `main.ts` lazy-load refactor.
-  - Generated `plugin/main.js` and `plugin/styles.css` updated successfully.
+  - `v1.0.2` is Latest release.
+  - Assets include `main.js`, `styles.css`, `manifest.json`, `obsidian-to-mp-v1.0.2.zip`, `assets.zip`.
 
 ## Known gaps
-1. User still reports runtime load failure in GUI after `v1.0.1`.
-2. `v1.0.2` GUI runtime test has not yet been executed on user-side Obsidian.
-3. Mobile runtime needs explicit smoke test on iOS/Android device.
+1. User-side Obsidian GUI runtime still reports load failure; exact stack trace not yet captured.
+2. No direct GUI test was executed inside this terminal session.
+3. Mobile runtime needs dedicated smoke test on iOS/Android devices.
 
 ## Conclusion
-- The hotfix compiles, bundles, and passes clean npm install/build checks.
-- The most likely startup crash trigger (eager PostCSS runtime import) has been removed.
-- BRAT blocking issue (missing tracked distributable files) has been fixed and merged into `main`.
-- Safe-boot patch has been prepared to avoid hard startup crashes from module-load failures.
-- Next mandatory step is release and user-side validation on `v1.0.2`.
+- Build, packaging, repository distribution, and release delivery checks all pass.
+- Startup path has been hardened and moved to safe-boot model.
+- Blocker closure now depends on user-side runtime stack trace capture if failure persists after `v1.0.2` reinstall.
 
 ## Delivery record
-1. Commit pushed: `c85f244` on `codex/agent-exploration`.
-2. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/6`.
-3. `origin/main` now includes merge commit `a50e820`.
-4. Commit pushed: `031bdb6` on `codex/agent-exploration`.
-5. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/8`.
-6. `origin/main` now includes merge commit `4a4cd09`.
-7. Commit pushed: `2ab954d` on `codex/agent-exploration`.
-8. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/10`.
-9. `origin/main` now includes merge commit `5891cb0`.
-10. Release published: `https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.1`.
+1. PR `#12` merged: https://github.com/qianzhu18/ObsidianToMP/pull/12
+2. `main` updated commit: `ab17bc3`
+3. Release `v1.0.2`: https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.2
 
 ## Required pass criteria for blocker closure
 1. BRAT installs and enables `v1.0.2`.
 2. No startup toast `"obsidian-to-mp" 插件加载失败。`.
 3. Setting tab opens successfully.
-4. Preview command works; if preview submodule fails, fallback UI renders and plugin remains loaded.
+4. Preview command works or fallback view appears (plugin stays loaded).
