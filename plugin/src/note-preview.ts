@@ -28,7 +28,7 @@ import { createPreview } from './ui/preview';
 import * as ReactDOM from 'react-dom/client';
 
 
-export const VIEW_TYPE_NOTE_PREVIEW = 'note-preview';
+export const VIEW_TYPE_NOTE_PREVIEW = 'obsidian-to-mp-note-preview';
 
 export class NotePreview extends ItemView {
     preview: ReactDOM.Root | null = null;

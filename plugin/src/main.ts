@@ -25,7 +25,7 @@ import { NMPSettings } from './settings';
 import { setVersion, uevent } from './utils';
 import { usePluginStore } from './store/PluginStore';
 
-const VIEW_TYPE_NOTE_PREVIEW = 'note-preview';
+const VIEW_TYPE_NOTE_PREVIEW = 'obsidian-to-mp-note-preview';
 
 class FallbackPreviewView extends ItemView {
 	private readonly message: string;
