@@ -1,38 +1,47 @@
 # ObsidianToMP Next Tasks
 
-Updated at: 2026-03-09 (Asia/Shanghai)
+Updated at: 2026-03-10 (Asia/Shanghai)
 
-## Current status summary
-- User-visible blocker still exists: BRAT can register plugin, but Obsidian still reports "插件加载失败" on user side.
-- Safe-boot startup hardening patch is merged to GitHub `main`.
-- Release `v1.0.2` is published and marked as Latest.
-- BRAT-required distributables are tracked in repo (`plugin/main.js`, `plugin/styles.css`, `plugin/src/styles.css`).
+## Current blocker
+User-side Obsidian still reports plugin load failure after BRAT install.
 
-## Delivery status (already done)
-1. PR `#12` merged to `main`: startup hardening + `v1.0.2` prep.
-2. Release published: `v1.0.2`.
-3. Release assets uploaded:
+Latest captured error:
+- `Plugin failure: obsidian-to-mp`
+- `Error: Attempting to register an existing view type "note-preview"`
+- stack points to `NoteToMpPlugin.registerView` in plugin onload.
+
+## Root cause analysis
+- View type id used by plugin was too generic: `note-preview`.
+- In user environment this id conflicts with an existing registered view type.
+- Conflict occurs before plugin fully initializes, causing startup failure toast.
+
+## Applied fix (prepared in v1.0.3)
+1. Change preview view type id to unique namespace:
+   - from: `note-preview`
+   - to: `obsidian-to-mp-note-preview`
+2. Keep safe-boot startup hardening from previous patch.
+3. Bump plugin version to `1.0.3`.
+4. Rebuild distributables (`main.js`, `styles.css`).
+
+## Pending release tasks
+1. Merge v1.0.3 fix commit to GitHub `main`.
+2. Publish `v1.0.3` release with assets:
    - `main.js`
    - `styles.css`
    - `manifest.json`
-   - `obsidian-to-mp-v1.0.2.zip`
+   - `obsidian-to-mp-v1.0.3.zip`
    - `assets.zip`
-
-## Pending tasks (must complete before blocker closure)
-1. Reinstall plugin via BRAT and ensure installed version is `v1.0.2`.
-2. Run GUI validation in Obsidian and capture console logs.
-3. If still failing, capture first red stack trace and patch exact failing module in next hotfix.
+3. Reinstall via BRAT and confirm version resolves to `v1.0.3`.
 
 ## Required acceptance results
-1. Obsidian no longer shows toast: `"obsidian-to-mp" 插件加载失败。`
-2. Plugin can be enabled and setting page can be opened.
-3. Running command `复制到公众号` opens right-side preview panel.
-4. If preview submodule fails, fallback view renders with explicit error text (no full plugin crash).
-5. BRAT "Change plugin version" includes `v1.0.2` and can switch to it.
+1. No toast: `"obsidian-to-mp" 插件加载失败。`
+2. Plugin can be enabled and remains enabled after restart.
+3. Command `复制到公众号` opens preview panel.
+4. Plugin settings page opens successfully.
+5. BRAT version selector contains `v1.0.3`.
 
-## Risk notes
-- There are existing uncommitted local changes in:
-  - `plugin/src/article-render.ts`
-  - `plugin/src/image-host.ts`
-  - `plugin/src/markdown/local-file.ts`
-- Release merge flow should continue excluding those unrelated local edits.
+## Runtime debug requirement (if still failing)
+Capture and attach:
+1. First red error message in Obsidian Console.
+2. Full stack trace.
+3. Installed plugin version shown in BRAT.
