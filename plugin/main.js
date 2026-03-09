@@ -88964,7 +88964,7 @@ var LocalImageManager = class {
     }
     return result;
   }
-  async uploadRemoteImage(root, token, type = "", vault) {
+  async uploadRemoteImage(root, token, type = "") {
     const images = root.getElementsByTagName("img");
     const result = [];
     for (let i = 0; i < images.length; i++) {
@@ -88974,49 +88974,20 @@ var LocalImageManager = class {
         continue;
       }
       if (img.src.startsWith("http")) {
-        const imgId = img.getAttribute("data-img-id");
-        const infoById = this.findImageInfo(img.src, imgId ? parseInt(imgId, 10) : null);
-        let res;
-        try {
-          res = await this.uploadImageFromUrl(img.src, token, type);
-        } catch (error) {
-          const canFallbackToLocal = !!(vault && (infoById == null ? void 0 : infoById.filePath));
-          if (!canFallbackToLocal) {
-            throw error;
-          }
-          const localData = await this.readImageData(vault, infoById.filePath);
-          if (!localData) {
-            throw error;
-          }
-          res = await UploadImageToWx(new Blob([localData.fileData]), localData.fileName, token, type);
-        }
-        if (res.errcode != 0) {
-          const canFallbackToLocal = !!(vault && (infoById == null ? void 0 : infoById.filePath));
-          if (canFallbackToLocal) {
-            const localData = await this.readImageData(vault, infoById.filePath);
-            if (localData) {
-              const fallbackRes = await UploadImageToWx(new Blob([localData.fileData]), localData.fileName, token, type);
-              if (fallbackRes.errcode === 0) {
-                res = fallbackRes;
-              }
-            }
-          }
-        }
+        const res = await this.uploadImageFromUrl(img.src, token, type);
         if (res.errcode != 0) {
           const msg = `\u4E0A\u4F20\u56FE\u7247\u5931\u8D25: ${img.src} ${res.errcode} ${res.errmsg}`;
           new import_obsidian5.Notice(msg);
           console.error(msg);
         }
-        const info = infoById || {
+        const info = {
           resUrl: img.src,
           filePath: "",
-          url: null,
-          media_id: null,
+          url: res.url,
+          media_id: res.media_id,
           id: this.getImageId()
         };
-        info.url = res.url;
-        info.media_id = res.media_id;
-        this.setImage(info.resUrl || img.src, info);
+        this.setImage(img.src, info);
         result.push(res);
       } else if (img.src.startsWith("data:image/")) {
         const { blob, ext } = this.base64ToBlob(img.src);
@@ -103246,9 +103217,6 @@ function parseErrorMessage(status, text) {
   if (isSecondLevelDomainForbidden(t)) {
     return "\u4E0A\u4F20\u5931\u8D25\uFF1A\u5F53\u524D\u56FE\u5E8A\u8981\u6C42\u4F7F\u7528 virtual-hosted-style\uFF0C\u8BF7\u5728\u63D2\u4EF6\u8BBE\u7F6E\u5C06 URL Style \u5207\u6362\u4E3A \u201Cvirtual-hosted\u201D \u6216 \u201Cauto\u201D\u3002";
   }
-  if (isBucketAclAccessDenied(t)) {
-    return "\u4E0A\u4F20\u5931\u8D25\uFF1A\u5BF9\u8C61\u5B58\u50A8\u62D2\u7EDD\u8BBF\u95EE\uFF08Bucket ACL/\u6743\u9650\u7B56\u7565\uFF09\u3002\u8BF7\u5C06\u5B58\u50A8\u6876\u6216\u5BF9\u8C61\u8BBE\u7F6E\u4E3A\u53EF\u516C\u5F00\u8BFB\u53D6\uFF0C\u6216\u914D\u7F6E\u53EF\u516C\u7F51\u8BBF\u95EE\u7684 Public Base URL\u3002";
-  }
   if (t.length === 0) {
     return `\u4E0A\u4F20\u5931\u8D25\uFF0CHTTP ${status}`;
   }
@@ -103256,9 +103224,6 @@ function parseErrorMessage(status, text) {
 }
 function isSecondLevelDomainForbidden(text) {
   return /SecondLevelDomainForbidden/i.test(text) || /Please use virtual hosted style/i.test(text);
-}
-function isBucketAclAccessDenied(text) {
-  return /AccessDenied/i.test(text) && /bucket acl/i.test(text);
 }
 var CloudImageUploader = class {
   constructor(config2) {
@@ -103416,7 +103381,7 @@ var CloudImageUploader = class {
     }
     return false;
   }
-  async uploadBlob(blob, fileName, options2) {
+  async uploadBlob(blob, fileName) {
     this.validate();
     const objectKey = this.makeObjectKey(fileName, blob.type || "image/jpeg");
     const preferredStyle = this.getUrlStyle();
@@ -103429,38 +103394,16 @@ var CloudImageUploader = class {
     if (response.status < 200 || response.status >= 300) {
       throw new Error(parseErrorMessage(response.status, response.text || ""));
     }
-    const result = {
+    return {
       key: objectKey,
       url: this.getPublicUrl(objectKey, usedStyle)
     };
-    if (options2 == null ? void 0 : options2.verifyPublicRead) {
-      await this.assertPublicReadable(result.url);
-    }
-    return result;
-  }
-  async assertPublicReadable(url) {
-    const res = await (0, import_obsidian8.requestUrl)({
-      url,
-      method: "GET",
-      throw: false,
-      headers: {
-        Range: "bytes=0-0"
-      }
-    });
-    if (res.status >= 200 && res.status < 400) {
-      return;
-    }
-    const text = (res.text || "").trim();
-    if (res.status === 403 || isBucketAclAccessDenied(text)) {
-      throw new Error("\u56FE\u7247\u5DF2\u4E0A\u4F20\u4F46\u65E0\u6CD5\u516C\u7F51\u8BBF\u95EE\uFF08HTTP 403 / AccessDenied\uFF09\u3002\u8BF7\u5C06 OSS Bucket \u8BFB\u6743\u9650\u8BBE\u7F6E\u4E3A\u201C\u516C\u5171\u8BFB\u201D\uFF0C\u6216\u914D\u7F6E\u53EF\u516C\u7F51\u8BBF\u95EE\u7684 Public Base URL\u3002");
-    }
-    throw new Error(`\u56FE\u7247\u5DF2\u4E0A\u4F20\u4F46\u516C\u7F51\u8BBF\u95EE\u5931\u8D25\uFF08HTTP ${res.status}\uFF09\u3002\u8BF7\u68C0\u67E5\u56FE\u5E8A\u57DF\u540D\u4E0E\u6743\u9650\u914D\u7F6E\u3002`);
   }
   async uploadTestImage() {
     const base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9lQw2CgAAAABJRU5ErkJggg==";
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "image/png" });
-    return this.uploadBlob(blob, "health-check.png", { verifyPublicRead: true });
+    return this.uploadBlob(blob, "health-check.png");
   }
 };
 
@@ -103661,7 +103604,7 @@ ${customCSS}`;
     await this.cachedElementsToImages(container);
     const lm = this.imageManager;
     await lm.uploadLocalImage(token, this.app.vault);
-    await lm.uploadRemoteImage(container, token, "", this.app.vault);
+    await lm.uploadRemoteImage(container, token);
     lm.replaceImages(container);
     this.imagesReplaced = true;
   }
@@ -103669,25 +103612,7 @@ ${customCSS}`;
     const cloudEnabled = this.settings.cloudImageHost.enabled;
     const cloudConfigured = this.isCloudHostConfigured();
     if (cloudEnabled && cloudConfigured) {
-      const workingContainer = container.cloneNode(true);
-      try {
-        await this.uploadImagesToCloud(workingContainer, {
-          skipRemoteImages: true,
-          verifyPublicRead: true
-        });
-        const content2 = this.getArticleContent(workingContainer, css2);
-        await writeHtmlToClipboard(content2);
-        return;
-      } catch (error) {
-        if (appid) {
-          console.warn("cloud upload unavailable during copy, fallback to WeChat upload:", error);
-          await this.uploadImages(appid, container);
-          const content2 = this.getArticleContent(container, css2);
-          await writeHtmlToClipboard(content2);
-          return;
-        }
-        throw error;
-      }
+      await this.uploadImagesToCloud(container, { skipRemoteImages: true });
     } else if (appid) {
       await this.uploadImages(appid, container);
     } else if (cloudEnabled && !cloudConfigured) {
@@ -103709,14 +103634,13 @@ ${customCSS}`;
       throw new Error("\u4E91\u7AEF\u56FE\u5E8A\u914D\u7F6E\u4E0D\u5B8C\u6574\uFF0C\u8BF7\u8865\u5168 Endpoint/Bucket/AccessKey/Secret");
     }
     const skipRemoteImages = !!options2.skipRemoteImages;
-    const verifyPublicRead = options2.verifyPublicRead !== false;
     const uploader = new CloudImageUploader(this.settings.cloudImageHost);
     await this.cachedElementsToImages(container);
     await this.imageManager.uploadImagesByHandler(
       container,
       this.app.vault,
       async (blob, filename) => {
-        const result = await uploader.uploadBlob(blob, filename, { verifyPublicRead });
+        const result = await uploader.uploadBlob(blob, filename);
         return result.url;
       },
       {
@@ -103748,7 +103672,7 @@ ${customCSS}`;
     await this.cachedElementsToImages(container);
     const lm = this.imageManager;
     await lm.uploadLocalImage(token, this.app.vault);
-    await lm.uploadRemoteImage(container, token, "", this.app.vault);
+    await lm.uploadRemoteImage(container, token);
     lm.replaceImages(container);
     this.imagesReplaced = true;
     let mediaId = metadata.thumb_media_id;
@@ -103808,7 +103732,7 @@ ${customCSS}`;
     const imageList = [];
     const lm = this.imageManager;
     await lm.uploadLocalImage(token, this.app.vault, "image");
-    await lm.uploadRemoteImage(container, token, "image", this.app.vault);
+    await lm.uploadRemoteImage(container, token, "image");
     const images = lm.getImageInfos(container);
     for (const image of images) {
       if (!image.media_id) {
