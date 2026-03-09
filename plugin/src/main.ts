@@ -20,30 +20,78 @@
  * THE SOFTWARE.
  */
 
-import { Plugin, WorkspaceLeaf, App, PluginManifest, Notice, TAbstractFile, TFile, TFolder, normalizePath } from 'obsidian';
-import { NotePreview, VIEW_TYPE_NOTE_PREVIEW } from './note-preview';
+import { Plugin, WorkspaceLeaf, App, PluginManifest, Notice, TAbstractFile, TFile, TFolder, ItemView } from 'obsidian';
 import { NMPSettings } from './settings';
-import { NoteToMpSettingTab } from './setting-tab';
-import AssetsManager from './assets';
 import { setVersion, uevent } from './utils';
-import { NotePubModal } from './note-pub';
 import { usePluginStore } from './store/PluginStore';
-import './styles.css';
 
+const VIEW_TYPE_NOTE_PREVIEW = 'note-preview';
+
+class FallbackPreviewView extends ItemView {
+	private readonly message: string;
+
+	constructor(leaf: WorkspaceLeaf, message: string) {
+		super(leaf);
+		this.message = message;
+	}
+
+	getViewType() {
+		return VIEW_TYPE_NOTE_PREVIEW;
+	}
+
+	getIcon() {
+		return 'clipboard-paste';
+	}
+
+	getDisplayText() {
+		return 'ObsidianToMP 预览';
+	}
+
+	async onOpen() {
+		const container = this.containerEl.children[1] as HTMLElement;
+		if (!container) {
+			return;
+		}
+		container.empty();
+		container.createEl('div', {
+			text: `ObsidianToMP 预览模块加载失败：${this.message}`,
+		});
+	}
+}
 
 export default class NoteToMpPlugin extends Plugin {
 	settings: NMPSettings;
-	assetsManager: AssetsManager;
+	assetsManager: any;
 	constructor(app: App, manifest: PluginManifest) {
 	    super(app, manifest);
-			AssetsManager.setup(app, manifest);
-	    this.assetsManager = AssetsManager.getInstance();
+			this.assetsManager = null;
+	}
+
+	private tryLoadStyle() {
+		try {
+			require('./styles.css');
+		} catch (error) {
+			console.error('[ObsidianToMP] load styles failed', error);
+		}
+	}
+
+	private tryInitAssetsManager() {
+		try {
+			const AssetsManager = require('./assets').default;
+			AssetsManager.setup(this.app, this.manifest);
+			this.assetsManager = AssetsManager.getInstance();
+		} catch (error) {
+			console.error('[ObsidianToMP] init assets manager failed', error);
+			new Notice('ObsidianToMP 资源模块加载失败，部分功能可能不可用。');
+		}
 	}
 
 	async loadResource() {
 		try {
 			await this.loadSettings();
-			await this.assetsManager.loadAssets();
+			if (this.assetsManager) {
+				await this.assetsManager.loadAssets();
+			}
 			usePluginStore.getState().setResourceLoaded(true);
 		} catch (error) {
 			console.error('[ObsidianToMP] loadResource failed', error);
@@ -53,6 +101,8 @@ export default class NoteToMpPlugin extends Plugin {
 
 	async onload() {
 		console.log('Loading ObsidianToMP');
+		this.tryLoadStyle();
+		this.tryInitAssetsManager();
 		usePluginStore.getState().setApp(this.app);
 		usePluginStore.getState().setPlugin(this);
 		setVersion(this.manifest.version);
@@ -62,7 +112,16 @@ export default class NoteToMpPlugin extends Plugin {
 
 		this.registerView(
 			VIEW_TYPE_NOTE_PREVIEW,
-			(leaf) => new NotePreview(leaf, this)
+			(leaf) => {
+				try {
+					const { NotePreview } = require('./note-preview');
+					return new NotePreview(leaf, this);
+				} catch (error) {
+					console.error('[ObsidianToMP] create preview view failed', error);
+					const msg = error instanceof Error ? error.message : String(error);
+					return new FallbackPreviewView(leaf, msg);
+				}
+			}
 		);
 
 		const ribbonIconEl = this.addRibbonIcon('clipboard-paste', '复制到公众号', (evt: MouseEvent) => {
@@ -78,7 +137,13 @@ export default class NoteToMpPlugin extends Plugin {
 			}
 		});
 
-		this.addSettingTab(new NoteToMpSettingTab(this.app, this));
+		try {
+			const { NoteToMpSettingTab } = require('./setting-tab');
+			this.addSettingTab(new NoteToMpSettingTab(this.app, this));
+		} catch (error) {
+			console.error('[ObsidianToMP] setting tab load failed', error);
+			new Notice('ObsidianToMP 设置页加载失败，请查看控制台日志。');
+		}
 
 		this.addCommand({
 			id: 'obsidian-to-mp-pub',
@@ -93,7 +158,13 @@ export default class NoteToMpPlugin extends Plugin {
 					new Notice('只能发布 Markdown 文件');
 					return;
 				}
-				new NotePubModal(this.app, [file]).open();
+				try {
+					const { NotePubModal } = require('./note-pub');
+					new NotePubModal(this.app, [file]).open();
+				} catch (error) {
+					console.error('[ObsidianToMP] note publish modal load failed', error);
+					new Notice('发布模块加载失败，请查看控制台日志。');
+				}
 			}
 		});
 
@@ -113,7 +184,13 @@ export default class NoteToMpPlugin extends Plugin {
 					new Notice('只能发布 Markdown 文件');
 					return;
 				}
-				new NotePubModal(this.app, [file], merge).open();
+				try {
+					const { NotePubModal } = require('./note-pub');
+					new NotePubModal(this.app, [file], merge).open();
+				} catch (error) {
+					console.error('[ObsidianToMP] note publish modal load failed', error);
+					new Notice('发布模块加载失败，请查看控制台日志。');
+				}
 			} else if (file instanceof TFolder) {
 				const files: TFile[] = [];
 				file.children.forEach((child) => {
@@ -121,7 +198,13 @@ export default class NoteToMpPlugin extends Plugin {
 						files.push(child);
 					}
 				});
-				new NotePubModal(this.app, files, merge).open();
+				try {
+					const { NotePubModal } = require('./note-pub');
+					new NotePubModal(this.app, files, merge).open();
+				} catch (error) {
+					console.error('[ObsidianToMP] note publish modal load failed', error);
+					new Notice('发布模块加载失败，请查看控制台日志。');
+				}
 			}
 		}
 
@@ -132,8 +215,13 @@ export default class NoteToMpPlugin extends Plugin {
 					notes.push(child);
 				}
 			});
-
-			new NotePubModal(this.app, notes, merge).open();
+			try {
+				const { NotePubModal } = require('./note-pub');
+				new NotePubModal(this.app, notes, merge).open();
+			} catch (error) {
+				console.error('[ObsidianToMP] note publish modal load failed', error);
+				new Notice('发布模块加载失败，请查看控制台日志。');
+			}
 		};
 
 		// 监听右键菜单
@@ -219,11 +307,10 @@ export default class NoteToMpPlugin extends Plugin {
 		if (leaf) workspace.revealLeaf(leaf);
 	}
 
-	getNotePreview(): NotePreview | null {
+	getNotePreview(): ItemView | null {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_NOTE_PREVIEW);
 		if (leaves.length > 0) {
-			const leaf = leaves[0];
-			return leaf.view as NotePreview;
+			return leaves[0].view as ItemView;
 		}
 		return null;
 	}
