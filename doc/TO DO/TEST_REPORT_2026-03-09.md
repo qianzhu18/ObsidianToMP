@@ -58,7 +58,17 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
   - `git rev-list --left-right --count main...origin/main`
 - Result: INFO
 - Evidence:
-  - Output: `0 7` (local `main` is behind remote by 7 commits in this workspace)
+  - Output: `0 0` (local `main` and `origin/main` are aligned)
+
+### T6. BRAT distribution file check on remote `main`
+- Command:
+  - `git ls-tree -r --name-only origin/main` and verify required files
+- Result: PASS
+- Evidence:
+  - `plugin/main.js` exists on `origin/main`
+  - `plugin/styles.css` exists on `origin/main`
+  - `plugin/manifest.json` exists on `origin/main`
+  - `plugin/src/styles.css` exists on `origin/main`
 
 ## Known gaps
 1. No in-app Obsidian GUI runtime test was executed in this terminal session.
@@ -68,9 +78,13 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 ## Conclusion
 - The hotfix compiles, bundles, and passes clean npm install/build checks.
 - The most likely startup crash trigger (eager PostCSS runtime import) has been removed.
+- BRAT blocking issue (missing tracked distributable files) has been fixed and merged into `main`.
 - Next mandatory step is BRAT reinstall validation from merged `main` and published `v1.0.1`.
 
 ## Delivery record
 1. Commit pushed: `c85f244` on `codex/agent-exploration`.
 2. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/6`.
 3. `origin/main` now includes merge commit `a50e820`.
+4. Commit pushed: `031bdb6` on `codex/agent-exploration`.
+5. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/8`.
+6. `origin/main` now includes merge commit `4a4cd09`.

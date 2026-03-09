@@ -5,6 +5,7 @@ Updated at: 2026-03-09 (Asia/Shanghai)
 ## Current status summary
 - Root cause candidate for "插件加载失败": runtime-incompatible PostCSS import was loaded at module init time.
 - Hotfix landed locally: lazy-load PostCSS in `plugin/src/utils.ts` with fallback handling.
+- BRAT distribution fix landed: `plugin/main.js` and `plugin/styles.css` are now tracked in `main`.
 - Version bumped locally to `1.0.1` in:
   - `plugin/manifest.json`
   - `plugin/package.json`
@@ -12,6 +13,8 @@ Updated at: 2026-03-09 (Asia/Shanghai)
 - Delivery status:
   - Commit `c85f244` pushed to `codex/agent-exploration`
   - PR `#6` merged to `main`
+  - Commit `031bdb6` pushed to `codex/agent-exploration`
+  - PR `#8` merged to `main`
 
 ## Completed in this round
 1. Synced remote refs and verified branch state.
@@ -19,6 +22,7 @@ Updated at: 2026-03-09 (Asia/Shanghai)
 3. Rebuilt plugin bundle successfully.
 4. Added structured test report under `doc/TO DO/TEST_REPORT_2026-03-09.md`.
 5. Created PR and merged fix into `main`.
+6. Fixed BRAT artifact gap and merged to `main` (`PR #8`).
 
 ## Pending tasks (must complete before public rollout)
 1. Publish `v1.0.1` release assets (`main.js`, `styles.css`, `manifest.json`, and `assets.zip` if needed).
