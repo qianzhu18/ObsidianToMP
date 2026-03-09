@@ -21,10 +21,26 @@
  */
 
 import { App, sanitizeHTMLToDom, Platform, TFile } from "obsidian";
-import * as postcss from "./postcss/postcss";
+import type * as Postcss from "./postcss/postcss";
 
 let PluginVersion = "0.0.0";
 let PlugPlatform = "obsidian";
+let postcssModule: typeof import("./postcss/postcss") | null = null;
+
+function getPostcss(): typeof import("./postcss/postcss") {
+	if (postcssModule !== null) {
+		return postcssModule;
+	}
+
+	try {
+		const mod = require("./postcss/postcss") as typeof import("./postcss/postcss");
+		postcssModule = mod;
+		return mod;
+	} catch (error) {
+		console.error("[ObsidianToMP] failed to load postcss runtime:", error);
+		throw new Error("当前环境暂不支持 CSS 解析能力");
+	}
+}
 
 export function setVersion(version: string) {
 	PluginVersion = version;
@@ -105,10 +121,10 @@ export async function CSSProcess(content: HTMLElement) {
 }
 
 export function parseCSS(css: string) {
-	return postcss.parse(css);
+	return getPostcss().parse(css);
 }
 
-export function ruleToStyle(rule: postcss.Rule) {
+export function ruleToStyle(rule: Postcss.Rule) {
 	let style = '';	
 	rule.walkDecls(decl => {
 		style += decl.prop + ':' + decl.value + ';';
@@ -134,7 +150,7 @@ function getPseudoType(selector: string) {
 	return undefined;
 }
 
-function applyStyle(root: HTMLElement, cssRoot: postcss.Root) {
+function applyStyle(root: HTMLElement, cssRoot: Postcss.Root) {
 	if (root.tagName.toLowerCase() === 'a' && root.classList.contains('wx_topic_link')) {
 		return;
 	}
@@ -204,7 +220,17 @@ function applyStyle(root: HTMLElement, cssRoot: postcss.Root) {
 export function applyCSS(html: string, css: string) {
 	const doc = sanitizeHTMLToDom(html);
 	const root = doc.firstChild as HTMLElement;
-	const cssRoot = postcss.parse(css);
+	if (!root) {
+		return html;
+	}
+
+	let cssRoot: Postcss.Root;
+	try {
+		cssRoot = getPostcss().parse(css);
+	} catch (error) {
+		console.warn("[ObsidianToMP] applyCSS fallback to original html:", error);
+		return root.outerHTML;
+	}
 	applyStyle(root, cssRoot);
 	return root.outerHTML;
 }
