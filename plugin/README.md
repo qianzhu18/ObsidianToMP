@@ -64,8 +64,9 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 ## 主题/高亮资源故障排查
 1. 打开插件设置，点击 `获取更多主题 -> 下载`。
 2. 看到“下载完成”后，重新打开预览视图。
-3. 手动验证资源地址可访问：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
-4. 如果外部网络限制 GitHub 下载，请切换网络后重试。
+3. 如果资源目录异常（数量不全/高亮仍缺失），点击 `强制重下`。
+4. 手动验证资源地址可访问：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
+5. 如果外部网络限制 GitHub 下载，请切换网络后重试。
 
 ## 分支策略
 - `main`: 基线与汇总
