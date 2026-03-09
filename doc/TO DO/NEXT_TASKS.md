@@ -9,25 +9,26 @@ Updated at: 2026-03-09 (Asia/Shanghai)
   - `plugin/manifest.json`
   - `plugin/package.json`
   - `plugin/versions.json`
+- Delivery status:
+  - Commit `c85f244` pushed to `codex/agent-exploration`
+  - PR `#6` merged to `main`
 
 ## Completed in this round
 1. Synced remote refs and verified branch state.
 2. Implemented startup-safety fix for PostCSS loading path.
 3. Rebuilt plugin bundle successfully.
 4. Added structured test report under `doc/TO DO/TEST_REPORT_2026-03-09.md`.
+5. Created PR and merged fix into `main`.
 
 ## Pending tasks (must complete before public rollout)
-1. Commit and push current hotfix branch.
-2. Merge hotfix into `main`.
-3. Publish `v1.0.1` release assets (`main.js`, `styles.css`, `manifest.json`, and `assets.zip` if needed).
-4. Reinstall via BRAT and verify no "插件加载失败" on fresh vault.
-5. Validate desktop and mobile behavior separately:
+1. Publish `v1.0.1` release assets (`main.js`, `styles.css`, `manifest.json`, and `assets.zip` if needed).
+2. Reinstall via BRAT and verify no "插件加载失败" on fresh vault.
+3. Validate desktop and mobile behavior separately:
    - Desktop: copy/paste + draft publish flow.
    - Mobile: plugin loads, settings panel opens, no startup crash.
-6. Update top-level README release section to reflect `v1.0.1`.
+4. Update top-level README release section to reflect `v1.0.1`.
 
 ## Risk notes
-- `main` branch local pointer is behind `origin/main` in this workspace; sync before release operations.
 - There are existing uncommitted local changes in:
   - `plugin/src/article-render.ts`
   - `plugin/src/image-host.ts`
