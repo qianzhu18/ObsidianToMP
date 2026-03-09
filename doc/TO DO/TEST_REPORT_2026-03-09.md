@@ -14,7 +14,11 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 1. `plugin/src/utils.ts`
    - Replaced eager `postcss` import with lazy runtime loading.
    - Added fallback error handling in `applyCSS`.
-2. Version metadata bump to `1.0.1`
+2. Safe-boot startup patch in `plugin/src/main.ts`
+   - lazy-load high-risk modules at runtime (`note-preview`, `setting-tab`, `note-pub`, `assets`, `styles`)
+   - fallback preview view on module load failure
+   - explicit Notice + console logs instead of startup crash
+3. Version metadata bump to `1.0.2`
    - `plugin/manifest.json`
    - `plugin/package.json`
    - `plugin/versions.json`
@@ -79,16 +83,25 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
   - `v1.0.1` is published and marked as Latest release.
   - Release assets include `main.js`, `styles.css`, `manifest.json`, `obsidian-to-mp-v1.0.1.zip`, and `assets.zip`.
 
+### T8. Safe-boot patch build verification
+- Command:
+  - `cd plugin && npm run build`
+- Result: PASS
+- Evidence:
+  - Build completed after `main.ts` lazy-load refactor.
+  - Generated `plugin/main.js` and `plugin/styles.css` updated successfully.
+
 ## Known gaps
-1. No in-app Obsidian GUI runtime test was executed in this terminal session.
-2. BRAT reinstall test on a fresh vault still needs manual validation after pushing/merging hotfix.
+1. User still reports runtime load failure in GUI after `v1.0.1`.
+2. `v1.0.2` GUI runtime test has not yet been executed on user-side Obsidian.
 3. Mobile runtime needs explicit smoke test on iOS/Android device.
 
 ## Conclusion
 - The hotfix compiles, bundles, and passes clean npm install/build checks.
 - The most likely startup crash trigger (eager PostCSS runtime import) has been removed.
 - BRAT blocking issue (missing tracked distributable files) has been fixed and merged into `main`.
-- Next mandatory step is BRAT reinstall validation from merged `main` and published `v1.0.1`.
+- Safe-boot patch has been prepared to avoid hard startup crashes from module-load failures.
+- Next mandatory step is release and user-side validation on `v1.0.2`.
 
 ## Delivery record
 1. Commit pushed: `c85f244` on `codex/agent-exploration`.
@@ -101,3 +114,9 @@ Scope: startup-failure hotfix validation for BRAT-installed plugin load issues
 8. Pull request merged: `https://github.com/qianzhu18/ObsidianToMP/pull/10`.
 9. `origin/main` now includes merge commit `5891cb0`.
 10. Release published: `https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.1`.
+
+## Required pass criteria for blocker closure
+1. BRAT installs and enables `v1.0.2`.
+2. No startup toast `"obsidian-to-mp" 插件加载失败。`.
+3. Setting tab opens successfully.
+4. Preview command works; if preview submodule fails, fallback UI renders and plugin remains loaded.
