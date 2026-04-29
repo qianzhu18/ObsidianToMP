@@ -146,15 +146,15 @@ const WechatInternal: React.FC = () => {
       setLoading(true);
       await renderRef.current.postArticle(appid, cover, contentRef.current!, cssContent);
       setLoading(false);
-      showMsg('发布成功');
+      showMsg('已保存到公众号草稿箱');
     }
     catch(error) {
       setLoading(false);
-      showErr('发布失败:' + error.message);
+      showErr('保存草稿失败：' + error.message);
     }
   };
 
-  const handlePostImage = async () => {
+  const handleImageDraft = async () => {
     if (!appid) {
       showErr('请先选择一个公众号账号');
       return;
@@ -169,11 +169,11 @@ const WechatInternal: React.FC = () => {
       setLoading(true);
       await renderRef.current.postImages(appid, contentRef.current!);
       setLoading(false);
-      showMsg('发布成功');
+      showMsg('已保存图片草稿');
     }
     catch(error) {
       setLoading(false);
-      showErr('发布失败:' + error.message);
+      showErr('保存图片草稿失败：' + error.message);
     }
   };
 
@@ -224,8 +224,16 @@ const WechatInternal: React.FC = () => {
         <Cover readOnly={!!metadataCover} initialCover={metadataCover} />
         <div className={styles.PanelRight}>
           <AccountSelect disabled={!!metadataAppid} />
-          <button onClick={gotoMP}>去公众号后台</button>
+          <button onClick={handlePost} className={styles.PrimaryButton}>保存草稿</button>
+          <button onClick={handleCopy}>复制排版</button>
+          <button
+            onClick={handleImageDraft}
+            title="适合只含图片或截图快讯的草稿，会按公众号图片草稿接口保存。"
+          >
+            图片草稿
+          </button>
           <button onClick={handleRefresh}>刷新</button>
+          <button onClick={gotoMP}>公众号后台</button>
           <div className={styles.DeviceSwitch}>
             <button
               className={previewDevice === 'mobile' ? styles.DeviceButtonActive : ''}
@@ -247,9 +255,6 @@ const WechatInternal: React.FC = () => {
             </button>
           </div>
           <div className={styles.LineBreak}></div>
-          <button onClick={handlePost}>发文章</button>
-          <button onClick={handlePostImage}>发图文</button>
-          <button onClick={handleCopy}>复制到公众号</button>
           <ThemeList disabled={!!metadataTheme} />
           <button onClick={handleExport}>导出</button>
           <button onClick={onHelpClick}>帮助</button>

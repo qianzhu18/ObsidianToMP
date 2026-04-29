@@ -64,11 +64,11 @@ class FallbackPreviewView extends ItemView {
 	}
 
 	getIcon() {
-		return 'clipboard-paste';
+		return 'newspaper';
 	}
 
 	getDisplayText() {
-		return 'ObsidianToMP 预览';
+		return 'ObsidianToMP 发布工作台';
 	}
 
 	async onOpen() {
@@ -229,7 +229,8 @@ export default class NoteToMpPlugin extends Plugin {
 - [ ] 结构完整
 - [ ] 图片已确认
 - [ ] 代码块/列表/引用显示正常
-- [ ] 点击“复制到公众号”后样式正常
+- [ ] 多机型预览无明显溢出
+- [ ] 点击“复制排版”后样式正常
 `,
 				created,
 			);
@@ -242,7 +243,7 @@ export default class NoteToMpPlugin extends Plugin {
 1. Agent/Codex/Claude Code 把初稿写入 \`content/inbox/\`。
 2. 人工校对后移动到 \`content/review/\`。
 3. 终稿移动到 \`content/publish/\`。
-4. 在 Obsidian 打开终稿，执行“复制到公众号”或“发布公众号文章”。
+4. 在 Obsidian 打开终稿，执行“ObsidianToMP 发布工作台”。
 5. 如果要让 Codex 直接保存到草稿箱，写入 \`content/.obsidiantomp/publish-request.json\` 后执行命令 \`obsidian-to-mp:obsidian-to-mp-publish-queued-draft\`。
 
 Codex 示例：
@@ -266,7 +267,7 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 
 注意：
 - 插件不会在 Obsidian 内直接启动外部 Agent；Agent 写请求，插件负责读取请求并调用公众号草稿 API。
-- 本地图片会在“复制到公众号”时按设置自动上传到云端图床；在线图片会跳过。
+- 本地图片会在“复制排版”或“保存草稿”时按设置自动上传到云端图床；在线图片会跳过。
 `,
 				created,
 			);
@@ -345,21 +346,21 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 		if (requested) {
 			const file = this.app.vault.getAbstractFileByPath(this.normalizeVaultPath(requested));
 			if (!(file instanceof TFile)) {
-				throw new Error(`找不到要发布的 Markdown：${requested}`);
-			}
-			if (file.extension.toLowerCase() !== 'md') {
-				throw new Error('只能发布 Markdown 文件');
-			}
+					throw new Error(`找不到要保存草稿的 Markdown：${requested}`);
+				}
+				if (file.extension.toLowerCase() !== 'md') {
+					throw new Error('只能保存 Markdown 文件到公众号草稿箱');
+				}
 			return file;
 		}
 
-		const active = this.app.workspace.getActiveFile();
-		if (!(active instanceof TFile)) {
-			throw new Error('请在请求文件中指定 note，或先打开要发布的 Markdown');
-		}
-		if (active.extension.toLowerCase() !== 'md') {
-			throw new Error('只能发布 Markdown 文件');
-		}
+			const active = this.app.workspace.getActiveFile();
+			if (!(active instanceof TFile)) {
+				throw new Error('请在请求文件中指定 note，或先打开要保存草稿的 Markdown');
+			}
+			if (active.extension.toLowerCase() !== 'md') {
+				throw new Error('只能保存 Markdown 文件到公众号草稿箱');
+			}
 		return active;
 	}
 
@@ -483,14 +484,14 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 			}
 		);
 
-		const ribbonIconEl = this.addRibbonIcon('clipboard-paste', '复制到公众号', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('newspaper', 'ObsidianToMP 发布工作台', (evt: MouseEvent) => {
 			this.activateView();
 		});
 		ribbonIconEl.addClass('obsidian-to-mp-plugin-ribbon-class');
 
 		this.addCommand({
 			id: 'obsidian-to-mp-preview',
-			name: '复制到公众号',
+			name: '打开 ObsidianToMP 发布工作台',
 			callback: () => {
 				this.activateView();
 			}
@@ -514,7 +515,7 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 
 		this.addCommand({
 			id: 'obsidian-to-mp-publish-queued-draft',
-			name: '发布队列稿件到公众号草稿箱',
+			name: '保存队列稿件到公众号草稿箱',
 			callback: () => {
 				this.publishQueuedDraft();
 			}
@@ -530,15 +531,15 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 
 		this.addCommand({
 			id: 'obsidian-to-mp-pub',
-			name: '发布公众号文章',
+			name: '保存当前笔记到公众号草稿箱',
 			callback: () => {
 				const file = this.app.workspace.getActiveFile();
 				if (!(file instanceof TFile)) {
-					new Notice('请先打开要发布的笔记再执行发布');
+					new Notice('请先打开要保存草稿的笔记');
 					return;
 				}
 				if (file.extension.toLocaleLowerCase() !== 'md') {
-					new Notice('只能发布 Markdown 文件');
+					new Notice('只能保存 Markdown 文件到公众号草稿箱');
 					return;
 				}
 				try {
@@ -546,7 +547,7 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 					new NotePubModal(this.app, [file]).open();
 				} catch (error) {
 					console.error('[ObsidianToMP] note publish modal load failed', error);
-					new Notice('发布模块加载失败，请查看控制台日志。');
+					new Notice('草稿箱模块加载失败，请查看控制台日志。');
 				}
 			}
 		});
@@ -562,17 +563,17 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 
 	registerEvents() {
 		const clickOnFile = (file: TAbstractFile, merge: boolean) => {
-			if (file instanceof TFile) {
-				if (file.extension.toLowerCase() !== 'md') {
-					new Notice('只能发布 Markdown 文件');
-					return;
-				}
+				if (file instanceof TFile) {
+					if (file.extension.toLowerCase() !== 'md') {
+						new Notice('只能保存 Markdown 文件到公众号草稿箱');
+						return;
+					}
 				try {
 					const { NotePubModal } = require('./note-pub');
 					new NotePubModal(this.app, [file], merge).open();
 				} catch (error) {
 					console.error('[ObsidianToMP] note publish modal load failed', error);
-					new Notice('发布模块加载失败，请查看控制台日志。');
+					new Notice('草稿箱模块加载失败，请查看控制台日志。');
 				}
 			} else if (file instanceof TFolder) {
 				const files: TFile[] = [];
@@ -586,7 +587,7 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 					new NotePubModal(this.app, files, merge).open();
 				} catch (error) {
 					console.error('[ObsidianToMP] note publish modal load failed', error);
-					new Notice('发布模块加载失败，请查看控制台日志。');
+					new Notice('草稿箱模块加载失败，请查看控制台日志。');
 				}
 			}
 		}
@@ -603,7 +604,7 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
 				new NotePubModal(this.app, notes, merge).open();
 			} catch (error) {
 				console.error('[ObsidianToMP] note publish modal load failed', error);
-				new Notice('发布模块加载失败，请查看控制台日志。');
+				new Notice('草稿箱模块加载失败，请查看控制台日志。');
 			}
 		};
 
@@ -612,8 +613,8 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
       this.app.workspace.on('file-menu', (menu, file) => {
         menu.addItem((item) => {
           item
-            .setTitle('发布到公众号')
-            .setIcon('lucide-send')
+            .setTitle('保存到公众号草稿箱')
+            .setIcon('lucide-newspaper')
             .onClick(async () => {
               clickOnFile(file, false);
             });
@@ -625,8 +626,8 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
       this.app.workspace.on('file-menu', (menu, file) => {
         menu.addItem((item) => {
           item
-            .setTitle('合并发布到公众号')
-            .setIcon('lucide-send')
+            .setTitle('合并保存到公众号草稿箱')
+            .setIcon('lucide-newspaper')
             .onClick(async () => {
               clickOnFile(file, true);
             });
@@ -638,8 +639,8 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
       this.app.workspace.on('files-menu', (menu, files, source) => {
         menu.addItem((item) => {
           item
-            .setTitle('发布到公众号')
-            .setIcon('lucide-send')
+            .setTitle('保存到公众号草稿箱')
+            .setIcon('lucide-newspaper')
             .onClick(() => {
 							clickOnFiles(files, false);
             });
@@ -651,8 +652,8 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish
       this.app.workspace.on('files-menu', (menu, files, source) => {
         menu.addItem((item) => {
           item
-            .setTitle('合并发布到公众号')
-            .setIcon('lucide-send')
+            .setTitle('合并保存到公众号草稿箱')
+            .setIcon('lucide-newspaper')
             .onClick(() => {
 							clickOnFiles(files, true);
             });

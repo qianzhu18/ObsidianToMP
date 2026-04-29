@@ -48,11 +48,11 @@ export class NotePreview extends ItemView {
     }
 
     getIcon() {
-        return 'clipboard-paste';
+        return 'newspaper';
     }
 
     getDisplayText() {
-        return 'ObsidianToMP 预览';
+        return 'ObsidianToMP 发布工作台';
     }
 
     async onOpen() {

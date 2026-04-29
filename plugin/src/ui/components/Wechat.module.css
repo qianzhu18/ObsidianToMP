@@ -23,10 +23,19 @@
 .PanelRight {
   display: flex;
   flex-wrap: wrap;
-  column-gap: 10px;
-  row-gap: 5px;
+  column-gap: 8px;
+  row-gap: 6px;
   padding: 0 10px;
   align-items: center;
+}
+
+.PanelRight button {
+  white-space: nowrap;
+}
+
+.PrimaryButton {
+  background: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
 }
 
 .DeviceSwitch {

@@ -625,10 +625,17 @@
 .Wechat_PanelRight {
   display: flex;
   flex-wrap: wrap;
-  column-gap: 10px;
-  row-gap: 5px;
+  column-gap: 8px;
+  row-gap: 6px;
   padding: 0 10px;
   align-items: center;
+}
+.Wechat_PanelRight button {
+  white-space: nowrap;
+}
+.Wechat_PrimaryButton {
+  background: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
 }
 .Wechat_DeviceSwitch {
   display: inline-flex;

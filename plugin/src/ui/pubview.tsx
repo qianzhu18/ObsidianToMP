@@ -142,18 +142,18 @@ export function Pubview({ modal, notes }: { modal: Modal, notes: TFile[] }) {
       return;
     }
     if (notes.length == 0) {
-      setMessage('没有需要发布的笔记');
+      setMessage('没有需要保存草稿的笔记');
       return;
     }
     
     // 实现10秒倒计时
     let countdown = 10;
-    setMessage(`发布准备中！${countdown}s`);
+    setMessage(`草稿保存准备中！${countdown}s`);
     
     const countdownInterval = setInterval(() => {
       countdown--;
       if (countdown > 0) {
-        setMessage(`发布准备中！${countdown}s`);
+        setMessage(`草稿保存准备中！${countdown}s`);
       } else {
         clearInterval(countdownInterval);
         setPublishing(true);
@@ -238,7 +238,7 @@ function MergePubview({ modal, notes }: { modal: Modal, notes: TFile[] }) {
       return;
     }
     if (notes.length == 0) {
-      setMessage('没有需要发布的笔记');
+      setMessage('没有需要保存草稿的笔记');
       return;
     }
 
