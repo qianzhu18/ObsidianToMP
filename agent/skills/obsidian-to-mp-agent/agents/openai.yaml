@@ -1,0 +1,4 @@
+interface:
+  display_name: "ObsidianToMP Agent"
+  short_description: "Configure Obsidian WeChat writing and draft publishing"
+  default_prompt: "Use $obsidian-to-mp-agent to set up my ObsidianToMP WeChat writing workflow, write an article into my vault, and save it to WeChat draft."
