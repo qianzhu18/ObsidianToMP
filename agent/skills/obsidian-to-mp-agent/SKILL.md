@@ -97,7 +97,7 @@ content/.obsidiantomp/publish-request.json
 Then trigger:
 
 ```bash
-obsidian vault="<VaultName>" command id="obsidian-to-mp-publish-queued-draft"
+obsidian vault="<VaultName>" command id="obsidian-to-mp:obsidian-to-mp-publish-queued-draft"
 ```
 
 Read `content/.obsidiantomp/publish-result.json`.

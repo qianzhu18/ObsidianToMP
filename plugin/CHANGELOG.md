@@ -1,3 +1,10 @@
+## 1.0.6 (ObsidianToMP fork)
+- README 重写产品定位，补充多机型预览、和参考产品差异、为什么适合 Agent 写作发布链路。
+- 修正 Obsidian CLI 文档命令 ID，统一使用 `obsidian-to-mp:obsidian-to-mp-publish-queued-draft`。
+- 修复队列发布在外部创建 `content/.obsidiantomp` 后可能无法写入结果文件的问题。
+- 修复队列发布读取公众号配置时 `this.settings` 未初始化的问题。
+- 队列发布会先写入 `running` 状态，方便 Codex / Claude Code 判断插件是否已接手任务。
+
 ## 1.0.5 (ObsidianToMP fork)
 - 新增 `发布队列稿件到公众号草稿箱` 与 `无弹窗保存当前笔记到公众号草稿箱` 命令。
 - 支持 Codex/Claude Code 写入 `content/.obsidiantomp/publish-request.json` 后，通过 Obsidian CLI 直接保存到公众号草稿箱。

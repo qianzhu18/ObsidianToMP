@@ -1,40 +1,59 @@
 # ObsidianToMP
 
-> 在 Obsidian 本地写作，一键复制到公众号编辑器，或一键同步到公众号草稿箱。  
-> 重点解决本地图片上传痛点：支持配置 **S3 兼容图床**（如 Cloudflare R2 / MinIO / 兼容 S3 的对象存储）。
+> Obsidian 原生的公众号内容生产与发布管理插件。  
+> 把「写作、图床、主题、多机型预览、复制、保存草稿箱、Codex/Claude Code 交接」收在一个本地工作流里。
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](./plugin/LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/qianzhu18/ObsidianToMP?label=release)](https://github.com/qianzhu18/ObsidianToMP/releases/latest)
 [![Main Branch](https://img.shields.io/badge/branch-main-blue)](https://github.com/qianzhu18/ObsidianToMP/tree/main)
 
 ## 为什么做这个项目
-很多人用 Obsidian 写公众号，最大痛点有两个：
-1. 复制粘贴后格式不稳定（尤其代码块、列表）。
-2. 本地图片无法无门槛同步到云端，导致必须走公众号素材上传。
+很多人已经在 Obsidian 里完成选题、资料、草稿和终稿，但公众号发布的最后一公里通常会断掉：
 
-ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地插件：
-- 不强制依赖付费服务
-- 支持本地预览 + 复制 + 发草稿
-- 支持你自己的云图床
+- 复制到公众号后，列表、代码块、引用和图片经常变形。
+- 桌面预览看着还行，手机首屏、平板宽度、桌面宽屏不一定成立。
+- 本地图片要么手动上传，要么临时换图床，流程很碎。
+- Codex / Claude Code 已经能写稿，但写完还要人手动复制、上传、进草稿箱。
+- 电脑端跑完以后，想在手机上继续编辑，往往卡在“草稿还没进公众号后台”。
 
-## 主要能力（当前版本）
-- 公众号排版预览（Obsidian 内）
-- 一键复制到公众号编辑器
-- 一键同步到公众号草稿箱
-- Codex/Claude Code 队列式保存到公众号草稿箱（通过 Obsidian CLI 触发）
-- 多主题（含整合主题包）
-- 多端预览切换（手机 / 平板 / 桌面）
-- S3 兼容图床配置
-- 复制时自动上传本地图片到云图床（在线图片自动跳过）
-- 图床 URL Style（`auto/path/virtual-hosted`，兼容 OSS）
+ObsidianToMP 想解决的是这条链路：**在 Obsidian 里写完，让插件负责渲染、图床、预览和草稿箱交接，让人把精力留给内容本身。**
+
+## 主要能力
+- Obsidian 内公众号排版预览，不用先跳到网页编辑器。
+- 手机 / 平板 / 桌面三种机型预览，重点检查首屏、图片比例、列表密度和长段落阅读感。
+- 一键复制到公众号编辑器，尽量保持 Markdown 排版、代码高亮、引用和列表结构。
+- 一键保存到微信公众号草稿箱，适合电脑端生成、手机端继续改。
+- S3 兼容图床配置，支持 Cloudflare R2、MinIO、OSS 兼容 S3 等。
+- 复制或发布时自动处理本地图片；在线图片默认跳过，避免重复上传。
+- 图床 URL Style 支持 `auto/path/virtual-hosted`，兼容常见对象存储。
+- 多主题与代码高亮，支持内置主题、外部主题包和自定义 CSS 笔记。
+- Codex / Claude Code 队列式交接：Agent 写稿后生成请求文件，ObsidianToMP 负责渲染并保存草稿箱。
 
 ## 创作发布工作台
-插件当前围绕公众号最后一公里收束成四个模块：
+插件当前围绕公众号最后一公里收束成五个模块：
 
 - 图床设计与诊断：S3 兼容配置、URL Style 选择、测试上传、公网可读校验、ACL/403 错误提示。
 - 主题选择：内置主题 + 外部主题包，支持默认样式、代码高亮、自定义 CSS 笔记。
-- 机型预览：在预览面板内切换手机 / 平板 / 桌面，发布前检查排版。
-- Agent 联动：Codex / Claude Code 写稿后写入发布请求，插件按公众号配置渲染、上传图片和封面，并保存到公众号草稿箱。
+- 多机型预览：手机、平板、桌面三种宽度一键切换，专门检查公众号阅读场景，而不是只看 Obsidian 编辑态。
+- 公众号草稿箱：按公众号配置渲染正文、上传封面和图片，保存到草稿箱。
+- Agent 联动：Codex / Claude Code 写稿后写入发布请求，插件按同一套主题、图床和公众号配置完成最后交接。
+
+## 和参考产品有什么不同
+这个项目参考过 NoteToMP、Raphael Publish、MWeb 主题资源和一些本地发布脚本，但现在的定位不同：它不是单纯的“复制工具”，也不是一个独立网页编辑器，而是 **Obsidian 里的公众号发布控制台**。
+
+| 对比对象 | 它擅长什么 | ObsidianToMP 的差异 |
+| --- | --- | --- |
+| NoteToMP | Obsidian 复制到公众号、主题、代码高亮、基础发草稿 | 保留 Obsidian 原生体验，同时强化本地图床、公开可读诊断、多机型预览、Agent 队列交接和 GitHub 一键安装产物 |
+| Raphael Publish | 独立网页编辑器、漂亮主题、实时多端预览 | 不要求把内容搬出 Obsidian；更适合已经用 vault 管理选题、素材、草稿和发布队列的人 |
+| MWeb themes | 主题资源丰富 | 主题只是其中一层；插件把主题、图床、公众号配置、草稿箱和 Agent 交接串成完整流程 |
+| 本地 fullchain 脚本 | 适合生成封面、配图、hosted Markdown | 插件负责最后一公里：按 Obsidian 当前稿件渲染、预览、复制或保存到公众号草稿箱 |
+
+## 为什么值得试
+- 你已经用 Obsidian 管内容，不想为了发公众号再搬到另一个编辑器。
+- 你希望发布前同时看手机、平板、桌面效果，减少“电脑看着好，手机读着累”的问题。
+- 你有自己的图床，想让本地图片自动变成公网可读链接。
+- 你希望 Codex / Claude Code 写完稿后，不只是生成 Markdown，而是能交给插件直接进公众号草稿箱。
+- 你想保留人工最后编辑权：插件只保存草稿，不直接发布。
 
 ## 使用截图
 ![preview](./plugin/images/screenshot.png)
@@ -59,7 +78,7 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 4. 初始化 content/inbox、content/review、content/publish、content/.obsidiantomp。
 5. 引导我在 ObsidianToMP 设置页填写公众号和图床配置，不要在聊天里打印 AppSecret、S3 Secret。
 6. 创建一篇测试稿，生成 publish-request.json。
-7. 如果 Obsidian CLI 可用，触发 obsidian-to-mp-publish-queued-draft，并检查 publish-result.json。
+7. 如果 Obsidian CLI 可用，触发 obsidian-to-mp:obsidian-to-mp-publish-queued-draft，并检查 publish-result.json。
 8. 如果不能自动保存草稿，请明确告诉我卡在哪一步，以及我需要在 Obsidian 里点哪个按钮。
 ```
 
@@ -157,7 +176,7 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 然后在 Obsidian 启用 `ObsidianToMP`。
 
 ## 当前发布产物
-- 当前插件版本：`v1.0.5`
+- 当前插件版本：`v1.0.6`
 - 下载地址：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
 - Release 附件应包含：
   - `main.js`
@@ -224,7 +243,7 @@ content/.obsidiantomp/publish-request.json
 
 然后触发：
 ```bash
-obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
+obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish-queued-draft"
 ```
 
 完成后检查 `content/.obsidiantomp/publish-result.json`：
@@ -271,7 +290,7 @@ https://github.com/qianzhu18/ObsidianToMP/tree/main/agent/skills/obsidian-to-mp-
 3. 将写作流程封装为可复用 Skill（提示词模板、标题结构、排版规则、发布前检查）。
 4. 在 Obsidian 打开该稿件，使用 ObsidianToMP 做多端预览（手机/平板/桌面）。
 5. 点击 `复制到公众号`，插件会自动上传本地图片并替换为云端链接（在线图片跳过）。
-6. 如果要无人值守保存草稿，让 Agent 写入 `content/.obsidiantomp/publish-request.json` 并触发命令 `obsidian-to-mp-publish-queued-draft`。
+6. 如果要无人值守保存草稿，让 Agent 写入 `content/.obsidiantomp/publish-request.json` 并触发命令 `obsidian-to-mp:obsidian-to-mp-publish-queued-draft`。
 7. 选择：
    - 复制到公众号编辑器，或
    - 一键同步到微信公众号草稿箱。
@@ -303,7 +322,7 @@ codex run "根据选题卡生成公众号稿件，写入 content/inbox/xxx.md"
 回退方式：
 ```bash
 git fetch --tags
-git checkout v1.0.5
+git checkout v1.0.6
 ```
 
 ## 研发路线（Road to 50 stars）
