@@ -8,8 +8,8 @@ ObsidianToMP 是面向微信公众号写作场景的 Obsidian 本地插件，强
 
 ## 当前功能
 - 公众号预览
-- 一键复制到公众号编辑器（自动处理本地图片）
-- 一键发草稿到公众号后台
+- 一键复制排版到公众号编辑器（自动处理本地图片）
+- 一键保存草稿到公众号后台
 - 多主题 + 代码高亮
 - 多端预览（手机 / 平板 / 桌面）
 - S3 兼容图床上传
@@ -83,7 +83,7 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 - `content/publish/`：待发布终稿
 - `content/AGENT_WORKFLOW.md`：Codex / Claude Code 调用示例
 
-当前版本不在 Obsidian 内直接启动外部 Agent，避免 shell 权限和跨端兼容问题；推荐让 Codex/Claude Code 写入 vault 后，再由插件完成预览、复制和发草稿。
+当前版本不在 Obsidian 内直接启动外部 Agent，避免 shell 权限和跨端兼容问题；推荐让 Codex/Claude Code 写入 vault 后，再由插件完成预览、复制排版和保存草稿。
 
 ### 队列式保存到公众号草稿箱
 Codex/Claude Code 可以写入：

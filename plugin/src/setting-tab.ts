@@ -588,7 +588,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('复制时自动上传本地图')
-			.setDesc('开启后，点击“复制到公众号”会自动上传本地/内嵌图片到图床；已是在线图片会自动跳过。')
+			.setDesc('开启后，点击“复制排版”或“保存草稿”会自动上传本地/内嵌图片到图床；已是在线图片会自动跳过。')
 			.addToggle(toggle => {
 				toggle.setValue(this.settings.cloudImageHost.enabled);
 				toggle.onChange(async (value) => {

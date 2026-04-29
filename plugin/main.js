@@ -105139,6 +105139,7 @@ var init_Wechat = __esm({
       Root: "Wechat_Root",
       Panel: "Wechat_Panel",
       PanelRight: "Wechat_PanelRight",
+      PrimaryButton: "Wechat_PrimaryButton",
       DeviceSwitch: "Wechat_DeviceSwitch",
       DeviceButtonActive: "Wechat_DeviceButtonActive",
       RenderWrapper: "Wechat_RenderWrapper",
@@ -105268,13 +105269,13 @@ var init_Wechat2 = __esm({
           setLoading(true);
           await renderRef.current.postArticle(appid, cover, contentRef.current, cssContent);
           setLoading(false);
-          showMsg("\u53D1\u5E03\u6210\u529F");
+          showMsg("\u5DF2\u4FDD\u5B58\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1");
         } catch (error) {
           setLoading(false);
-          showErr("\u53D1\u5E03\u5931\u8D25:" + error.message);
+          showErr("\u4FDD\u5B58\u8349\u7A3F\u5931\u8D25\uFF1A" + error.message);
         }
       };
-      const handlePostImage = async () => {
+      const handleImageDraft = async () => {
         if (!appid) {
           showErr("\u8BF7\u5148\u9009\u62E9\u4E00\u4E2A\u516C\u4F17\u53F7\u8D26\u53F7");
           return;
@@ -105287,10 +105288,10 @@ var init_Wechat2 = __esm({
           setLoading(true);
           await renderRef.current.postImages(appid, contentRef.current);
           setLoading(false);
-          showMsg("\u53D1\u5E03\u6210\u529F");
+          showMsg("\u5DF2\u4FDD\u5B58\u56FE\u7247\u8349\u7A3F");
         } catch (error) {
           setLoading(false);
-          showErr("\u53D1\u5E03\u5931\u8D25:" + error.message);
+          showErr("\u4FDD\u5B58\u56FE\u7247\u8349\u7A3F\u5931\u8D25\uFF1A" + error.message);
         }
       };
       const handleCopy = async () => {
@@ -105333,8 +105334,18 @@ var init_Wechat2 = __esm({
           /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(Cover, { readOnly: !!metadataCover, initialCover: metadataCover }),
           /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: Wechat_default.PanelRight, children: [
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(AccountSelect_default2, { disabled: !!metadataAppid }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: gotoMP, children: "\u53BB\u516C\u4F17\u53F7\u540E\u53F0" }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handlePost, className: Wechat_default.PrimaryButton, children: "\u4FDD\u5B58\u8349\u7A3F" }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handleCopy, children: "\u590D\u5236\u6392\u7248" }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+              "button",
+              {
+                onClick: handleImageDraft,
+                title: "\u9002\u5408\u53EA\u542B\u56FE\u7247\u6216\u622A\u56FE\u5FEB\u8BAF\u7684\u8349\u7A3F\uFF0C\u4F1A\u6309\u516C\u4F17\u53F7\u56FE\u7247\u8349\u7A3F\u63A5\u53E3\u4FDD\u5B58\u3002",
+                children: "\u56FE\u7247\u8349\u7A3F"
+              }
+            ),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handleRefresh, children: "\u5237\u65B0" }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: gotoMP, children: "\u516C\u4F17\u53F7\u540E\u53F0" }),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { className: Wechat_default.DeviceSwitch, children: [
               /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
                 "button",
@@ -105362,9 +105373,6 @@ var init_Wechat2 = __esm({
               )
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { className: Wechat_default.LineBreak }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handlePost, children: "\u53D1\u6587\u7AE0" }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handlePostImage, children: "\u53D1\u56FE\u6587" }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handleCopy, children: "\u590D\u5236\u5230\u516C\u4F17\u53F7" }),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ThemeList, { disabled: !!metadataTheme }),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: handleExport, children: "\u5BFC\u51FA" }),
             /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("button", { onClick: onHelpClick, children: "\u5E2E\u52A9" })
@@ -105562,10 +105570,10 @@ var init_note_preview = __esm({
         return VIEW_TYPE_NOTE_PREVIEW;
       }
       getIcon() {
-        return "clipboard-paste";
+        return "newspaper";
       }
       getDisplayText() {
-        return "ObsidianToMP \u9884\u89C8";
+        return "ObsidianToMP \u53D1\u5E03\u5DE5\u4F5C\u53F0";
       }
       async onOpen() {
         useRenderStore.getState().setNote(this.app.workspace.getActiveFile());
@@ -106099,7 +106107,7 @@ var init_setting_tab = __esm({
           });
         });
         containerEl.createEl("h3", { text: "\u4E91\u7AEF\u56FE\u5E8A\uFF08S3 \u517C\u5BB9\uFF09" });
-        new import_obsidian13.Setting(containerEl).setName("\u590D\u5236\u65F6\u81EA\u52A8\u4E0A\u4F20\u672C\u5730\u56FE").setDesc("\u5F00\u542F\u540E\uFF0C\u70B9\u51FB\u201C\u590D\u5236\u5230\u516C\u4F17\u53F7\u201D\u4F1A\u81EA\u52A8\u4E0A\u4F20\u672C\u5730/\u5185\u5D4C\u56FE\u7247\u5230\u56FE\u5E8A\uFF1B\u5DF2\u662F\u5728\u7EBF\u56FE\u7247\u4F1A\u81EA\u52A8\u8DF3\u8FC7\u3002").addToggle((toggle) => {
+        new import_obsidian13.Setting(containerEl).setName("\u590D\u5236\u65F6\u81EA\u52A8\u4E0A\u4F20\u672C\u5730\u56FE").setDesc("\u5F00\u542F\u540E\uFF0C\u70B9\u51FB\u201C\u590D\u5236\u6392\u7248\u201D\u6216\u201C\u4FDD\u5B58\u8349\u7A3F\u201D\u4F1A\u81EA\u52A8\u4E0A\u4F20\u672C\u5730/\u5185\u5D4C\u56FE\u7247\u5230\u56FE\u5E8A\uFF1B\u5DF2\u662F\u5728\u7EBF\u56FE\u7247\u4F1A\u81EA\u52A8\u8DF3\u8FC7\u3002").addToggle((toggle) => {
           toggle.setValue(this.settings.cloudImageHost.enabled);
           toggle.onChange(async (value) => {
             this.settings.cloudImageHost.enabled = value;
@@ -110232,15 +110240,15 @@ function Pubview({ modal, notes }) {
       return;
     }
     if (notes.length == 0) {
-      setMessage("\u6CA1\u6709\u9700\u8981\u53D1\u5E03\u7684\u7B14\u8BB0");
+      setMessage("\u6CA1\u6709\u9700\u8981\u4FDD\u5B58\u8349\u7A3F\u7684\u7B14\u8BB0");
       return;
     }
     let countdown = 10;
-    setMessage(`\u53D1\u5E03\u51C6\u5907\u4E2D\uFF01${countdown}s`);
+    setMessage(`\u8349\u7A3F\u4FDD\u5B58\u51C6\u5907\u4E2D\uFF01${countdown}s`);
     const countdownInterval = setInterval(() => {
       countdown--;
       if (countdown > 0) {
-        setMessage(`\u53D1\u5E03\u51C6\u5907\u4E2D\uFF01${countdown}s`);
+        setMessage(`\u8349\u7A3F\u4FDD\u5B58\u51C6\u5907\u4E2D\uFF01${countdown}s`);
       } else {
         clearInterval(countdownInterval);
         setPublishing(true);
@@ -110309,7 +110317,7 @@ function MergePubview({ modal, notes }) {
       return;
     }
     if (notes.length == 0) {
-      setMessage("\u6CA1\u6709\u9700\u8981\u53D1\u5E03\u7684\u7B14\u8BB0");
+      setMessage("\u6CA1\u6709\u9700\u8981\u4FDD\u5B58\u8349\u7A3F\u7684\u7B14\u8BB0");
       return;
     }
     setPublishing(true);
@@ -110528,10 +110536,10 @@ var FallbackPreviewView = class extends import_obsidian15.ItemView {
     return VIEW_TYPE_NOTE_PREVIEW2;
   }
   getIcon() {
-    return "clipboard-paste";
+    return "newspaper";
   }
   getDisplayText() {
-    return "ObsidianToMP \u9884\u89C8";
+    return "ObsidianToMP \u53D1\u5E03\u5DE5\u4F5C\u53F0";
   }
   async onOpen() {
     const container = this.containerEl.children[1];
@@ -110680,7 +110688,8 @@ var NoteToMpPlugin = class extends import_obsidian15.Plugin {
 - [ ] \u7ED3\u6784\u5B8C\u6574
 - [ ] \u56FE\u7247\u5DF2\u786E\u8BA4
 - [ ] \u4EE3\u7801\u5757/\u5217\u8868/\u5F15\u7528\u663E\u793A\u6B63\u5E38
-- [ ] \u70B9\u51FB\u201C\u590D\u5236\u5230\u516C\u4F17\u53F7\u201D\u540E\u6837\u5F0F\u6B63\u5E38
+- [ ] \u591A\u673A\u578B\u9884\u89C8\u65E0\u660E\u663E\u6EA2\u51FA
+- [ ] \u70B9\u51FB\u201C\u590D\u5236\u6392\u7248\u201D\u540E\u6837\u5F0F\u6B63\u5E38
 `,
         created
       );
@@ -110692,7 +110701,7 @@ var NoteToMpPlugin = class extends import_obsidian15.Plugin {
 1. Agent/Codex/Claude Code \u628A\u521D\u7A3F\u5199\u5165 \`content/inbox/\`\u3002
 2. \u4EBA\u5DE5\u6821\u5BF9\u540E\u79FB\u52A8\u5230 \`content/review/\`\u3002
 3. \u7EC8\u7A3F\u79FB\u52A8\u5230 \`content/publish/\`\u3002
-4. \u5728 Obsidian \u6253\u5F00\u7EC8\u7A3F\uFF0C\u6267\u884C\u201C\u590D\u5236\u5230\u516C\u4F17\u53F7\u201D\u6216\u201C\u53D1\u5E03\u516C\u4F17\u53F7\u6587\u7AE0\u201D\u3002
+4. \u5728 Obsidian \u6253\u5F00\u7EC8\u7A3F\uFF0C\u6267\u884C\u201CObsidianToMP \u53D1\u5E03\u5DE5\u4F5C\u53F0\u201D\u3002
 5. \u5982\u679C\u8981\u8BA9 Codex \u76F4\u63A5\u4FDD\u5B58\u5230\u8349\u7A3F\u7BB1\uFF0C\u5199\u5165 \`content/.obsidiantomp/publish-request.json\` \u540E\u6267\u884C\u547D\u4EE4 \`obsidian-to-mp:obsidian-to-mp-publish-queued-draft\`\u3002
 
 Codex \u793A\u4F8B\uFF1A
@@ -110716,7 +110725,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
 
 \u6CE8\u610F\uFF1A
 - \u63D2\u4EF6\u4E0D\u4F1A\u5728 Obsidian \u5185\u76F4\u63A5\u542F\u52A8\u5916\u90E8 Agent\uFF1BAgent \u5199\u8BF7\u6C42\uFF0C\u63D2\u4EF6\u8D1F\u8D23\u8BFB\u53D6\u8BF7\u6C42\u5E76\u8C03\u7528\u516C\u4F17\u53F7\u8349\u7A3F API\u3002
-- \u672C\u5730\u56FE\u7247\u4F1A\u5728\u201C\u590D\u5236\u5230\u516C\u4F17\u53F7\u201D\u65F6\u6309\u8BBE\u7F6E\u81EA\u52A8\u4E0A\u4F20\u5230\u4E91\u7AEF\u56FE\u5E8A\uFF1B\u5728\u7EBF\u56FE\u7247\u4F1A\u8DF3\u8FC7\u3002
+- \u672C\u5730\u56FE\u7247\u4F1A\u5728\u201C\u590D\u5236\u6392\u7248\u201D\u6216\u201C\u4FDD\u5B58\u8349\u7A3F\u201D\u65F6\u6309\u8BBE\u7F6E\u81EA\u52A8\u4E0A\u4F20\u5230\u4E91\u7AEF\u56FE\u5E8A\uFF1B\u5728\u7EBF\u56FE\u7247\u4F1A\u8DF3\u8FC7\u3002
 `,
         created
       );
@@ -110785,19 +110794,19 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     if (requested) {
       const file = this.app.vault.getAbstractFileByPath(this.normalizeVaultPath(requested));
       if (!(file instanceof import_obsidian15.TFile)) {
-        throw new Error(`\u627E\u4E0D\u5230\u8981\u53D1\u5E03\u7684 Markdown\uFF1A${requested}`);
+        throw new Error(`\u627E\u4E0D\u5230\u8981\u4FDD\u5B58\u8349\u7A3F\u7684 Markdown\uFF1A${requested}`);
       }
       if (file.extension.toLowerCase() !== "md") {
-        throw new Error("\u53EA\u80FD\u53D1\u5E03 Markdown \u6587\u4EF6");
+        throw new Error("\u53EA\u80FD\u4FDD\u5B58 Markdown \u6587\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1");
       }
       return file;
     }
     const active = this.app.workspace.getActiveFile();
     if (!(active instanceof import_obsidian15.TFile)) {
-      throw new Error("\u8BF7\u5728\u8BF7\u6C42\u6587\u4EF6\u4E2D\u6307\u5B9A note\uFF0C\u6216\u5148\u6253\u5F00\u8981\u53D1\u5E03\u7684 Markdown");
+      throw new Error("\u8BF7\u5728\u8BF7\u6C42\u6587\u4EF6\u4E2D\u6307\u5B9A note\uFF0C\u6216\u5148\u6253\u5F00\u8981\u4FDD\u5B58\u8349\u7A3F\u7684 Markdown");
     }
     if (active.extension.toLowerCase() !== "md") {
-      throw new Error("\u53EA\u80FD\u53D1\u5E03 Markdown \u6587\u4EF6");
+      throw new Error("\u53EA\u80FD\u4FDD\u5B58 Markdown \u6587\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1");
     }
     return active;
   }
@@ -110914,13 +110923,13 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
         }
       }
     );
-    const ribbonIconEl = this.addRibbonIcon("clipboard-paste", "\u590D\u5236\u5230\u516C\u4F17\u53F7", (evt) => {
+    const ribbonIconEl = this.addRibbonIcon("newspaper", "ObsidianToMP \u53D1\u5E03\u5DE5\u4F5C\u53F0", (evt) => {
       this.activateView();
     });
     ribbonIconEl.addClass("obsidian-to-mp-plugin-ribbon-class");
     this.addCommand({
       id: "obsidian-to-mp-preview",
-      name: "\u590D\u5236\u5230\u516C\u4F17\u53F7",
+      name: "\u6253\u5F00 ObsidianToMP \u53D1\u5E03\u5DE5\u4F5C\u53F0",
       callback: () => {
         this.activateView();
       }
@@ -110941,7 +110950,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     });
     this.addCommand({
       id: "obsidian-to-mp-publish-queued-draft",
-      name: "\u53D1\u5E03\u961F\u5217\u7A3F\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1",
+      name: "\u4FDD\u5B58\u961F\u5217\u7A3F\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1",
       callback: () => {
         this.publishQueuedDraft();
       }
@@ -110955,15 +110964,15 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     }
     this.addCommand({
       id: "obsidian-to-mp-pub",
-      name: "\u53D1\u5E03\u516C\u4F17\u53F7\u6587\u7AE0",
+      name: "\u4FDD\u5B58\u5F53\u524D\u7B14\u8BB0\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1",
       callback: () => {
         const file = this.app.workspace.getActiveFile();
         if (!(file instanceof import_obsidian15.TFile)) {
-          new import_obsidian15.Notice("\u8BF7\u5148\u6253\u5F00\u8981\u53D1\u5E03\u7684\u7B14\u8BB0\u518D\u6267\u884C\u53D1\u5E03");
+          new import_obsidian15.Notice("\u8BF7\u5148\u6253\u5F00\u8981\u4FDD\u5B58\u8349\u7A3F\u7684\u7B14\u8BB0");
           return;
         }
         if (file.extension.toLocaleLowerCase() !== "md") {
-          new import_obsidian15.Notice("\u53EA\u80FD\u53D1\u5E03 Markdown \u6587\u4EF6");
+          new import_obsidian15.Notice("\u53EA\u80FD\u4FDD\u5B58 Markdown \u6587\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1");
           return;
         }
         try {
@@ -110971,7 +110980,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
           new NotePubModal2(this.app, [file]).open();
         } catch (error) {
           console.error("[ObsidianToMP] note publish modal load failed", error);
-          new import_obsidian15.Notice("\u53D1\u5E03\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
+          new import_obsidian15.Notice("\u8349\u7A3F\u7BB1\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
         }
       }
     });
@@ -110984,7 +110993,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     const clickOnFile = (file, merge) => {
       if (file instanceof import_obsidian15.TFile) {
         if (file.extension.toLowerCase() !== "md") {
-          new import_obsidian15.Notice("\u53EA\u80FD\u53D1\u5E03 Markdown \u6587\u4EF6");
+          new import_obsidian15.Notice("\u53EA\u80FD\u4FDD\u5B58 Markdown \u6587\u4EF6\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1");
           return;
         }
         try {
@@ -110992,7 +111001,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
           new NotePubModal2(this.app, [file], merge).open();
         } catch (error) {
           console.error("[ObsidianToMP] note publish modal load failed", error);
-          new import_obsidian15.Notice("\u53D1\u5E03\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
+          new import_obsidian15.Notice("\u8349\u7A3F\u7BB1\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
         }
       } else if (file instanceof import_obsidian15.TFolder) {
         const files = [];
@@ -111006,7 +111015,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
           new NotePubModal2(this.app, files, merge).open();
         } catch (error) {
           console.error("[ObsidianToMP] note publish modal load failed", error);
-          new import_obsidian15.Notice("\u53D1\u5E03\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
+          new import_obsidian15.Notice("\u8349\u7A3F\u7BB1\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
         }
       }
     };
@@ -111022,13 +111031,13 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
         new NotePubModal2(this.app, notes, merge).open();
       } catch (error) {
         console.error("[ObsidianToMP] note publish modal load failed", error);
-        new import_obsidian15.Notice("\u53D1\u5E03\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
+        new import_obsidian15.Notice("\u8349\u7A3F\u7BB1\u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u65E5\u5FD7\u3002");
       }
     };
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         menu.addItem((item) => {
-          item.setTitle("\u53D1\u5E03\u5230\u516C\u4F17\u53F7").setIcon("lucide-send").onClick(async () => {
+          item.setTitle("\u4FDD\u5B58\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1").setIcon("lucide-newspaper").onClick(async () => {
             clickOnFile(file, false);
           });
         });
@@ -111037,7 +111046,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         menu.addItem((item) => {
-          item.setTitle("\u5408\u5E76\u53D1\u5E03\u5230\u516C\u4F17\u53F7").setIcon("lucide-send").onClick(async () => {
+          item.setTitle("\u5408\u5E76\u4FDD\u5B58\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1").setIcon("lucide-newspaper").onClick(async () => {
             clickOnFile(file, true);
           });
         });
@@ -111046,7 +111055,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     this.registerEvent(
       this.app.workspace.on("files-menu", (menu, files, source) => {
         menu.addItem((item) => {
-          item.setTitle("\u53D1\u5E03\u5230\u516C\u4F17\u53F7").setIcon("lucide-send").onClick(() => {
+          item.setTitle("\u4FDD\u5B58\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1").setIcon("lucide-newspaper").onClick(() => {
             clickOnFiles(files, false);
           });
         });
@@ -111055,7 +111064,7 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-p
     this.registerEvent(
       this.app.workspace.on("files-menu", (menu, files, source) => {
         menu.addItem((item) => {
-          item.setTitle("\u5408\u5E76\u53D1\u5E03\u5230\u516C\u4F17\u53F7").setIcon("lucide-send").onClick(() => {
+          item.setTitle("\u5408\u5E76\u4FDD\u5B58\u5230\u516C\u4F17\u53F7\u8349\u7A3F\u7BB1").setIcon("lucide-newspaper").onClick(() => {
             clickOnFiles(files, true);
           });
         });

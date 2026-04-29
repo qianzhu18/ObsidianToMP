@@ -75,7 +75,7 @@ Keep local images as normal markdown image links when the user provides local fi
 2. Use ObsidianToMP preview for mobile/tablet/desktop checks.
 3. Confirm theme, code highlight, cover, and image rendering.
 4. Delivery options:
-   - Click `复制到公众号`; the plugin uploads local images and keeps online URLs unchanged.
+   - Click `复制排版`; the plugin uploads local images and keeps online URLs unchanged.
    - Save directly to WeChat draft through the queued draft handoff below.
 
 ## Queued draft handoff

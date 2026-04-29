@@ -21,10 +21,11 @@ ObsidianToMP 想解决的是这条链路：**在 Obsidian 里写完，让插件�
 ## 主要能力
 - Obsidian 内公众号排版预览，不用先跳到网页编辑器。
 - 手机 / 平板 / 桌面三种机型预览，重点检查首屏、图片比例、列表密度和长段落阅读感。
-- 一键复制到公众号编辑器，尽量保持 Markdown 排版、代码高亮、引用和列表结构。
+- 一键复制排版到公众号编辑器，尽量保持 Markdown 排版、代码高亮、引用和列表结构。
 - 一键保存到微信公众号草稿箱，适合电脑端生成、手机端继续改。
+- 图片草稿入口适合截图、海报、快讯类内容；普通长文建议走“保存草稿”。
 - S3 兼容图床配置，支持 Cloudflare R2、MinIO、OSS 兼容 S3 等。
-- 复制或发布时自动处理本地图片；在线图片默认跳过，避免重复上传。
+- 复制排版或保存草稿时自动处理本地图片；在线图片默认跳过，避免重复上传。
 - 图床 URL Style 支持 `auto/path/virtual-hosted`，兼容常见对象存储。
 - 多主题与代码高亮，支持内置主题、外部主题包和自定义 CSS 笔记。
 - Codex / Claude Code 队列式交接：Agent 写稿后生成请求文件，ObsidianToMP 负责渲染并保存草稿箱。
@@ -43,7 +44,7 @@ ObsidianToMP 想解决的是这条链路：**在 Obsidian 里写完，让插件�
 
 | 对比对象 | 它擅长什么 | ObsidianToMP 的差异 |
 | --- | --- | --- |
-| NoteToMP | Obsidian 复制到公众号、主题、代码高亮、基础发草稿 | 保留 Obsidian 原生体验，同时强化本地图床、公开可读诊断、多机型预览、Agent 队列交接和 GitHub 一键安装产物 |
+| NoteToMP | Obsidian 复制到公众号、主题、代码高亮、基础保存草稿 | 保留 Obsidian 原生体验，同时强化本地图床、公开可读诊断、多机型预览、Agent 队列交接和 GitHub 一键安装产物 |
 | Raphael Publish | 独立网页编辑器、漂亮主题、实时多端预览 | 不要求把内容搬出 Obsidian；更适合已经用 vault 管理选题、素材、草稿和发布队列的人 |
 | MWeb themes | 主题资源丰富 | 主题只是其中一层；插件把主题、图床、公众号配置、草稿箱和 Agent 交接串成完整流程 |
 | 本地 fullchain 脚本 | 适合生成封面、配图、hosted Markdown | 插件负责最后一公里：按 Obsidian 当前稿件渲染、预览、复制或保存到公众号草稿箱 |
@@ -57,6 +58,8 @@ ObsidianToMP 想解决的是这条链路：**在 Obsidian 里写完，让插件�
 
 ## 使用截图
 ![preview](./plugin/images/screenshot.png)
+
+上图是 Obsidian 内的发布工作台：左侧保留源稿，右侧完成主题、机型预览、复制排版、图片草稿和公众号草稿箱保存。
 
 ## 小白一键配置：把这段发给 Codex / Claude Code
 如果你不想手动研究插件配置，可以把下面这一段直接复制给 Codex 或 Claude Code。它会先读取本仓库 README 和配套 skill，再帮你完成插件安装、写作目录初始化、Agent 发布队列配置和一次测试稿验证。
@@ -176,7 +179,7 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 然后在 Obsidian 启用 `ObsidianToMP`。
 
 ## 当前发布产物
-- 当前插件版本：`v1.0.6`
+- 当前插件版本：`v1.0.7`
 - 下载地址：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
 - Release 附件应包含：
   - `main.js`
@@ -189,7 +192,7 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 - 插件会优先从 `latest` release 下载 `assets.zip`，并兼容 `v1.0.0 / 1.0.0` 两种标签格式。
 - 如果提示“高亮资源未下载”或“外部主题资源未检测到”：
 1. 进入插件设置，点击 `获取更多主题 -> 下载`。
-2. 下载完成后重启预览页（关闭再打开“复制到公众号”视图）。
+2. 下载完成后重启发布工作台（关闭再打开“ObsidianToMP 发布工作台”视图）。
 3. 如果资源目录已损坏或数量不完整，点击 `强制重下` 覆盖修复。
 4. 若仍失败，浏览器直接打开并确认可下载：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
 5. 公司网络受限时，建议切换网络后重试（移动热点通常可快速验证）。
@@ -213,10 +216,13 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 2. 点击 `测试公众号`：
    - 若提示 `IP 不在白名单`，把当前出口 IP 加到公众号后台白名单。
 3. 如需图床，配置 S3 参数并点 `测试上传`。
-4. 打开任意 Markdown 笔记，点击右侧 `复制到公众号`：
+4. 打开任意 Markdown 笔记，点击侧边栏报纸图标，进入 `ObsidianToMP 发布工作台`：
    - 本地图片会自动上传到图床
    - 已是在线链接的图片会自动跳过
-5. 可选点击 `发文章` / `发图文`，一键保存到公众号草稿箱。
+5. 常用操作：
+   - `复制排版`：把当前渲染结果复制到公众号编辑器
+   - `保存草稿`：按公众号配置保存到微信公众号草稿箱
+   - `图片草稿`：只适合截图、海报、快讯等图片型草稿，不是普通长文主流程
 
 ## Codex 一键保存到公众号草稿箱
 适合“电脑端跑完 Codex，手机端继续最后编辑”的场景。
@@ -275,25 +281,25 @@ https://github.com/qianzhu18/ObsidianToMP/tree/main/agent/skills/obsidian-to-mp-
 3. 复制验证：
    - 含本地图片：复制后公众号编辑器可见图片
    - 含在线图片：复制后不重复上传，图片可见
-4. 发布验证：
-   - `发文章` 成功进入公众号草稿箱
-   - `发图文` 成功进入草稿箱
+4. 草稿箱验证：
+   - `保存草稿` 成功进入公众号草稿箱
+   - `图片草稿` 对截图/海报型内容有明确提示，不误导为普通长文发布
 5. 异常验证：
    - 公众号白名单未配时，提示明确
    - 图床 ACL/403 时，错误提示可理解，链路有兜底行为
 
 ## Agent 一键写作链路（CLI + Skill + 插件）
-目标：让 Agent 在本地自动完成「写作 -> 预览 -> 复制自动图床 -> 发布草稿」。
+目标：让 Agent 在本地自动完成「写作 -> 预览 -> 复制自动图床 -> 保存草稿」。
 
 1. 在 Obsidian 命令面板执行 `ObsidianToMP: 初始化公众号写作工作流`，生成 `content/inbox / content/review / content/publish` 与模板。
 2. 使用 Claude Code / Codex CLI 执行写作任务，输出到 Obsidian 指定目录（`.md`）。
 3. 将写作流程封装为可复用 Skill（提示词模板、标题结构、排版规则、发布前检查）。
 4. 在 Obsidian 打开该稿件，使用 ObsidianToMP 做多端预览（手机/平板/桌面）。
-5. 点击 `复制到公众号`，插件会自动上传本地图片并替换为云端链接（在线图片跳过）。
+5. 点击 `复制排版`，插件会自动上传本地图片并替换为云端链接（在线图片跳过）。
 6. 如果要无人值守保存草稿，让 Agent 写入 `content/.obsidiantomp/publish-request.json` 并触发命令 `obsidian-to-mp:obsidian-to-mp-publish-queued-draft`。
 7. 选择：
-   - 复制到公众号编辑器，或
-   - 一键同步到微信公众号草稿箱。
+   - 复制排版到公众号编辑器，或
+   - 保存到微信公众号草稿箱。
 
 ### 推荐目录约定（便于 Agent 自动化）
 - `content/inbox/`：Agent 初稿输出目录
@@ -305,9 +311,9 @@ https://github.com/qianzhu18/ObsidianToMP/tree/main/agent/skills/obsidian-to-mp-
 # 1) 生成初稿（由你的 Agent/Skill 负责）
 codex run "根据选题卡生成公众号稿件，写入 content/inbox/xxx.md"
 
-# 2) 人工调整后在 Obsidian 中使用 ObsidianToMP 发布
-# - 复制到公众号（自动处理图片）
-# - 或直接发草稿
+# 2) 人工调整后在 Obsidian 中使用 ObsidianToMP 交接
+# - 复制排版（自动处理图片）
+# - 或直接保存草稿
 ```
 
 完整流程文档见：
@@ -327,7 +333,7 @@ git checkout v1.0.6
 
 ## 研发路线（Road to 50 stars）
 这是一个个人入门开源项目，目标是通过持续打磨拿到 50 stars：
-- [x] 可用 MVP：预览、复制、发草稿
+- [x] 可用 MVP：预览、复制排版、保存草稿
 - [x] 图床能力：S3 兼容 + 自动上传兜底
 - [ ] 复制保真回归集（列表/表格/Callout/代码块）
 - [ ] 发布流程可观测（错误分层与排障文档）
