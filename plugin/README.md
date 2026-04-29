@@ -13,6 +13,13 @@ ObsidianToMP 是面向微信公众号写作场景的 Obsidian 本地插件，强
 - 多主题 + 代码高亮
 - 多端预览（手机 / 平板 / 桌面）
 - S3 兼容图床上传
+- Codex / Claude Code 队列式保存到公众号草稿箱
+
+## 工作台模块
+- 图床设计与诊断：配置 S3 兼容图床、测试上传、公网可读校验、URL Style/ACL 错误提示。
+- 主题选择：默认样式、代码高亮、外部主题包、自定义 CSS 笔记。
+- 机型预览：手机 / 平板 / 桌面预览切换。
+- Agent 联动：写作 skill 写入 `publish-request.json`，插件渲染并保存到公众号草稿箱。
 
 ## 本地开发
 
@@ -35,11 +42,12 @@ npm run build
 - 输入仓库：`qianzhu18/ObsidianToMP`
 - 安装完成后启用 `ObsidianToMP`
 - 首次启用会自动下载主题/高亮资源（`assets.zip`）
-- 若提示 `no manifest.json`：删除失败记录 -> 重启 Obsidian -> 重新添加
+- Release 与仓库根目录都提供 Obsidian 所需的 `manifest.json / main.js / styles.css`
+- 若仍提示 `no manifest.json`：删除失败记录 -> 重启 Obsidian -> 重新添加
 
 2. Release 手动安装（最稳）
-- 下载：`https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.0`
-- 解压 `obsidian-to-mp-v1.0.0.zip` 到 `<Vault>/.obsidian/plugins/obsidian-to-mp`
+- 下载：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
+- 解压最新的 `obsidian-to-mp-v版本号.zip` 到 `<Vault>/.obsidian/plugins/obsidian-to-mp`
 - 确认目录内有：`main.js`、`styles.css`、`manifest.json`
 - 重启并启用插件
 
@@ -67,6 +75,40 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 3. 如果资源目录异常（数量不全/高亮仍缺失），点击 `强制重下`。
 4. 手动验证资源地址可访问：`https://github.com/qianzhu18/ObsidianToMP/releases/latest/download/assets.zip`
 5. 如果外部网络限制 GitHub 下载，请切换网络后重试。
+
+## Agent 写作链路
+在命令面板执行 `ObsidianToMP: 初始化公众号写作工作流`，插件会创建：
+- `content/inbox/`：Agent 初稿和选题卡
+- `content/review/`：人工校对
+- `content/publish/`：待发布终稿
+- `content/AGENT_WORKFLOW.md`：Codex / Claude Code 调用示例
+
+当前版本不在 Obsidian 内直接启动外部 Agent，避免 shell 权限和跨端兼容问题；推荐让 Codex/Claude Code 写入 vault 后，再由插件完成预览、复制和发草稿。
+
+### 队列式保存到公众号草稿箱
+Codex/Claude Code 可以写入：
+
+```text
+content/.obsidiantomp/publish-request.json
+```
+
+示例：
+
+```json
+{
+  "note": "content/publish/文章名.md",
+  "account": "公众号名称或 wx 开头的 AppID",
+  "resultPath": "content/.obsidiantomp/publish-result.json"
+}
+```
+
+然后通过 Obsidian CLI 触发：
+
+```bash
+obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
+```
+
+插件会渲染目标 Markdown、上传图片和封面、调用微信公众号草稿 API，并把结果写回 `publish-result.json`。
 
 ## 分支策略
 - `main`: 基线与汇总

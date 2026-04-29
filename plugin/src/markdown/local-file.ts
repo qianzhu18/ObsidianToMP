@@ -253,7 +253,7 @@ export class LocalImageManager {
         return result;
     }
 
-    async uploadRemoteImage(root: HTMLElement, token: string, type: string = '') {
+    async uploadRemoteImage(root: HTMLElement, token: string, type: string = '', vault?: Vault) {
         const images = root.getElementsByTagName('img');
         const result = [];
         for (let i = 0; i < images.length; i++) {
@@ -265,20 +265,52 @@ export class LocalImageManager {
             }
 
             if (img.src.startsWith('http')) {
-                const res = await this.uploadImageFromUrl(img.src, token, type);
+                const imgId = img.getAttribute('data-img-id');
+                const infoById = this.findImageInfo(img.src, imgId ? parseInt(imgId, 10) : null);
+
+                let res;
+                try {
+                    res = await this.uploadImageFromUrl(img.src, token, type);
+                } catch (error) {
+                    const canFallbackToLocal = !!(vault && infoById?.filePath);
+                    if (!canFallbackToLocal) {
+                        throw error;
+                    }
+                    const localData = await this.readImageData(vault!, infoById!.filePath);
+                    if (!localData) {
+                        throw error;
+                    }
+                    res = await UploadImageToWx(new Blob([localData.fileData]), localData.fileName, token, type);
+                }
+
+                if (res.errcode != 0) {
+                    const canFallbackToLocal = !!(vault && infoById?.filePath);
+                    if (canFallbackToLocal) {
+                        const localData = await this.readImageData(vault!, infoById!.filePath);
+                        if (localData) {
+                            const fallbackRes = await UploadImageToWx(new Blob([localData.fileData]), localData.fileName, token, type);
+                            if (fallbackRes.errcode === 0) {
+                                res = fallbackRes;
+                            }
+                        }
+                    }
+                }
+
                 if (res.errcode != 0) {
                     const msg = `上传图片失败: ${img.src} ${res.errcode} ${res.errmsg}`;
                     new Notice(msg);
                     console.error(msg);
                 }
-                const info = {
+                const info = infoById || {
                     resUrl: img.src,
                     filePath: "",
-                    url: res.url,
-                    media_id: res.media_id,
+                    url: null,
+                    media_id: null,
                     id: this.getImageId(),
                 };
-                this.setImage(img.src, info);
+                info.url = res.url;
+                info.media_id = res.media_id;
+                this.setImage(info.resUrl || img.src, info);
                 result.push(res);
             }
             else if (img.src.startsWith('data:image/')) {

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-import { App, TextAreaComponent, PluginSettingTab, Setting, Notice, sanitizeHTMLToDom, requestUrl } from 'obsidian';
+import { App, TextAreaComponent, PluginSettingTab, Setting, Notice, sanitizeHTMLToDom, requestUrl, TFile } from 'obsidian';
 import NoteToMpPlugin from './main';
 import { wxGetToken, getWxAccessToken, requestLatestVersion } from './weixin-api';
 import { cleanMathCache } from './markdown/math';
@@ -200,8 +200,63 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		this.displayWXInfo('')
 	}
 
+	private getAvailableThemes() {
+		const manager = this.plugin.assetsManager;
+		if (manager?.themes?.length > 0) {
+			return manager.themes;
+		}
+		return manager?.defaultTheme ? [manager.defaultTheme] : [];
+	}
+
+	private getAvailableHighlights() {
+		const manager = this.plugin.assetsManager;
+		if (manager?.highlights?.length > 0) {
+			return manager.highlights;
+		}
+		return [{name: '默认'}];
+	}
+
+	private async ensureFolder(path: string) {
+		const parts = path.split('/').filter(Boolean);
+		let current = '';
+		for (const part of parts) {
+			current = current ? `${current}/${part}` : part;
+			if (!await this.app.vault.adapter.exists(current)) {
+				await this.app.vault.adapter.mkdir(current);
+			}
+		}
+	}
+
+	private async writeCurrentNotePublishRequest() {
+		const active = this.app.workspace.getActiveFile();
+		if (!(active instanceof TFile) || active.extension.toLowerCase() !== 'md') {
+			new Notice('请先打开要保存到草稿箱的 Markdown 笔记');
+			return false;
+		}
+		if (this.settings.wxInfo.length === 0) {
+			new Notice('请先保存公众号信息');
+			return false;
+		}
+
+		const requestPath = 'content/.obsidiantomp/publish-request.json';
+		await this.ensureFolder('content/.obsidiantomp');
+		const request = {
+			note: active.path,
+			account: this.settings.wxInfo[0].name || this.settings.wxInfo[0].appid,
+			resultPath: 'content/.obsidiantomp/publish-result.json',
+			requestId: `manual-${Date.now()}`,
+		};
+		await this.app.vault.adapter.write(requestPath, JSON.stringify(request, null, 2));
+		new Notice(`已生成发布请求：${requestPath}`);
+		return true;
+	}
+
 	private async refreshAssetsStatus() {
 		if (!this.assetsStatusEl) {
+			return;
+		}
+		if (!this.plugin.assetsManager) {
+			this.assetsStatusEl.setText('主题/高亮资源状态：资源模块未初始化');
 			return;
 		}
 		this.assetsStatusEl.setText('主题/高亮资源状态：检查中...');
@@ -239,7 +294,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('默认样式')
 			.addDropdown(dropdown => {
-                const styles = this.plugin.assetsManager.themes;
+                const styles = this.getAvailableThemes();
                 for (let s of styles) {
 				    dropdown.addOption(s.className, s.name);
                 }
@@ -253,7 +308,7 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('代码高亮')
 			.addDropdown(dropdown => {
-                const styles = this.plugin.assetsManager.highlights;
+                const styles = this.getAvailableHighlights();
                 for (let s of styles) {
 				    dropdown.addOption(s.name, s.name);
                 }
@@ -362,7 +417,13 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					const ok = await this.plugin.assetsManager.downloadThemes();
 					button.setButtonText(ok ? '下载完成' : '下载失败');
 					await this.refreshAssetsStatus();
-					window.setTimeout(() => button.setButtonText('下载'), 1600);
+					window.setTimeout(() => {
+						if (ok) {
+							this.display();
+						} else {
+							button.setButtonText('下载');
+						}
+					}, 1600);
 				});
 			})
 			.addButton(button => {
@@ -372,7 +433,13 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					const ok = await this.plugin.assetsManager.downloadThemes(true);
 					button.setButtonText(ok ? '重下完成' : '重下失败');
 					await this.refreshAssetsStatus();
-					window.setTimeout(() => button.setButtonText('强制重下'), 1600);
+					window.setTimeout(() => {
+						if (ok) {
+							this.display();
+						} else {
+							button.setButtonText('强制重下');
+						}
+					}, 1600);
 				});
 			})
 			.addButton(button => {
@@ -391,8 +458,39 @@ export class NoteToMpSettingTab extends PluginSettingTab {
 					this.settings.resetStyelAndHighlight();
 					await this.plugin.saveSettings();
 					await this.refreshAssetsStatus();
+					this.display();
 				});
 			})
+		new Setting(containerEl)
+			.setName('Agent 写作链路')
+			.setDesc('创建 content/inbox、content/review、content/publish 与公众号稿件模板，方便 Codex / Claude Code 写稿后交给插件预览发布。')
+			.addButton(button => {
+				button.setButtonText('初始化写作工作流');
+				button.onClick(async () => {
+					button.setButtonText('初始化中...');
+					await this.plugin.initializeWritingWorkflow();
+					button.setButtonText('初始化写作工作流');
+				});
+			});
+		new Setting(containerEl)
+			.setName('Agent 保存草稿箱')
+			.setDesc('为当前笔记生成发布请求，或直接执行队列发布。Codex / Claude Code 也会写同一个请求文件来完成最后一公里。')
+			.addButton(button => {
+				button.setButtonText('生成当前笔记请求');
+				button.onClick(async () => {
+					button.setButtonText('生成中...');
+					await this.writeCurrentNotePublishRequest();
+					button.setButtonText('生成当前笔记请求');
+				});
+			})
+			.addButton(button => {
+				button.setButtonText('执行发布队列');
+				button.onClick(async () => {
+					button.setButtonText('发布中...');
+					await this.plugin.publishQueuedDraft();
+					button.setButtonText('执行发布队列');
+				});
+			});
 		new Setting(containerEl)
 			.setName('全局CSS属性')
 			.setDesc('只能填写CSS属性，不能写选择器')

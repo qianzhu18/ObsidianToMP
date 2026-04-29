@@ -1,13 +1,15 @@
 {
 	"name": "obsidian-to-mp",
-	"version": "1.0.3",
+	"version": "1.0.5",
 	"description": "Obsidian plugin for WeChat MP publishing (local-first fork)",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build:release": "npm run build && npm run sync-root",
 		"download": "node tools/download.mjs",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"sync-root": "node tools/sync-root.mjs",
+		"version": "node version-bump.mjs && npm run sync-root && git add manifest.json versions.json ../manifest.json ../versions.json"
 	},
 	"keywords": [],
 	"author": "",

@@ -57,8 +57,8 @@ export default class AssetsManager {
     app: App;
     defaultTheme: Theme = DefaultTheme;
     manifest: PluginManifest;
-    themes: Theme[];
-    highlights: Highlight[];
+    themes: Theme[] = [DefaultTheme];
+    highlights: Highlight[] = [{name: '默认', url: '', css: DefaultHighlight}];
     assetsPath: string;
     themesPath: string;
     hilightPath: string;
@@ -197,6 +197,22 @@ export default class AssetsManager {
         };
     }
 
+    private mergeThemes(...groups: Theme[][]) {
+        const seen = new Set<string>();
+        const merged: Theme[] = [];
+        for (const group of groups) {
+            for (const theme of group) {
+                const key = (theme.className || theme.name || '').toLowerCase();
+                if (!key || seen.has(key)) {
+                    continue;
+                }
+                seen.add(key);
+                merged.push(theme);
+            }
+        }
+        return merged;
+    }
+
     async loadThemes() {
         try {
             const builtinThemes: Theme[] = [...raphaelBuiltinThemes];
@@ -205,17 +221,19 @@ export default class AssetsManager {
                     this.noticeMissingThemesShown = true;
                     new Notice('未检测到外部主题资源，已加载内置主题。');
                 }
-                this.themes = [this.defaultTheme, ...builtinThemes];
+                this.themes = this.mergeThemes([this.defaultTheme], builtinThemes);
                 return;
             }
             const data = await this.app.vault.adapter.read(this.themeCfg);
             if (data) {
-                const themes = JSON.parse(data);
+                const parsed = JSON.parse(data);
+                const themes = Array.isArray(parsed) ? parsed : [];
                 await this.loadCSS(themes);
-                this.themes = [this.defaultTheme, ...builtinThemes, ...themes];
+                this.themes = this.mergeThemes([this.defaultTheme], builtinThemes, themes);
             }
         } catch (error) {
             console.error(error);
+            this.themes = this.mergeThemes([this.defaultTheme], [...raphaelBuiltinThemes]);
             new Notice('themes.json解析失败！');
         }
     }
@@ -312,19 +330,27 @@ export default class AssetsManager {
 
             const data = await this.app.vault.adapter.read(this.hilightCfg);
             if (data) {
-                const items = JSON.parse(data);
+                const parsed = JSON.parse(data);
+                const items = Array.isArray(parsed) ? parsed : [];
+                const seen = new Set(this.highlights.map(item => item.name.toLowerCase()));
                 for (const item of items) {
+                    const name = typeof item?.name === 'string' ? item.name : '';
+                    if (!name || seen.has(name.toLowerCase())) {
+                        continue;
+                    }
                     const cssFile = this.hilightPath + item.name + '.css';
                     if (!await this.app.vault.adapter.exists(cssFile)) {
                         continue;
                     }
                     const cssContent = await this.app.vault.adapter.read(cssFile);
                     this.highlights.push({name: item.name, url: item.url, css: cssContent});
+                    seen.add(name.toLowerCase());
                 }
             }
         }
         catch (error) {
             console.error(error);
+            this.highlights = [{name: '默认', url: '', css: DefaultHighlight}];
             new Notice('highlights.json解析失败！');
         }
     }
@@ -353,24 +379,32 @@ export default class AssetsManager {
     }
 
     getTheme(themeName: string) {
+        if (!this.themes || this.themes.length === 0) {
+            this.themes = [this.defaultTheme];
+        }
         if (themeName === '') {
             return this.themes[0];
         }
 
+        const requested = themeName.toLowerCase().trim();
         for (const theme of this.themes) {
-            if (theme.name.toLowerCase() === themeName.toLowerCase() || theme.className.toLowerCase() === themeName.toLowerCase()) {
+            if (theme.name.toLowerCase() === requested || theme.className.toLowerCase() === requested) {
                 return theme;
             }
         }
     }
 
     getHighlight(highlightName: string) {
+        if (!this.highlights || this.highlights.length === 0) {
+            this.highlights = [{name: '默认', url: '', css: DefaultHighlight}];
+        }
         if (highlightName === '') {
             return this.highlights[0];
         }
 
+        const requested = highlightName.toLowerCase().trim();
         for (const highlight of this.highlights) {
-            if (highlight.name.toLowerCase() === highlightName.toLowerCase()) {
+            if (highlight.name.toLowerCase() === requested) {
                 return highlight;
             }
         }
@@ -435,6 +469,7 @@ export default class AssetsManager {
                 return true;
             }
             const { data, url } = await this.fetchThemeArchive();
+            await this.removeThemeArtifactsQuietly();
             await this.unzip(new Blob([data]));
             await this.loadAssets(true);
             this.noticeMissingThemesShown = false;
@@ -459,28 +494,30 @@ export default class AssetsManager {
     async unzip(data:Blob) {
         const zipFileReader = new zip.BlobReader(data);
         const zipReader = new zip.ZipReader(zipFileReader);
-        const entries = await zipReader.getEntries();
+        try {
+            const entries = await zipReader.getEntries();
 
-        if (!await this.app.vault.adapter.exists(this.assetsPath)) {
-            await this.app.vault.adapter.mkdir(this.assetsPath);
-        }
+            await this.ensureFolder(this.assetsPath);
 
-        for (const entry of entries) {
-            if (entry.directory) {
-                const dirPath = this.assetsPath + entry.filename;
-                await this.app.vault.adapter.mkdir(dirPath);
-            }
-            else {
-                const filePath = this.assetsPath + entry.filename;
-                const blobWriter = new zip.Uint8ArrayWriter();
-                if (entry.getData) {
-                    const data = await entry.getData(blobWriter);
-                    await this.app.vault.adapter.writeBinary(filePath, data.buffer as ArrayBuffer);
+            for (const entry of entries) {
+                const filename = this.normalizeAssetEntry(entry.filename);
+                if (entry.directory) {
+                    await this.ensureFolder(this.assetsPath + filename);
+                }
+                else {
+                    const filePath = this.assetsPath + filename;
+                    const parent = filePath.split('/').slice(0, -1).join('/');
+                    await this.ensureFolder(parent);
+                    const blobWriter = new zip.Uint8ArrayWriter();
+                    if (entry.getData) {
+                        const data = await entry.getData(blobWriter);
+                        await this.app.vault.adapter.writeBinary(filePath, data.buffer as ArrayBuffer);
+                    }
                 }
             }
+        } finally {
+            await zipReader.close();
         }
-
-        await zipReader.close();
     }
 
     async removeThemes() {
@@ -498,11 +535,39 @@ export default class AssetsManager {
             if (await adapter.exists(this.hilightPath)) {
                 await adapter.rmdir(this.hilightPath, true);
             }
-            await this.loadAssets();
+            await this.loadAssets(true);
             new Notice('清空完成！');
         } catch (error) {
             console.error(error);
             new Notice('清空主题失败！');
+        }
+    }
+
+    private normalizeAssetEntry(filename: string) {
+        const normalized = filename.replace(/\\/g, '/').replace(/^\/+/, '');
+        if (
+            normalized.length === 0 ||
+            normalized.startsWith('../') ||
+            normalized.includes('/../') ||
+            normalized === '..'
+        ) {
+            throw new Error(`资源包包含非法路径：${filename}`);
+        }
+        return normalized;
+    }
+
+    private async ensureFolder(path: string) {
+        const normalized = path.replace(/\/+$/, '');
+        if (!normalized) {
+            return;
+        }
+        const parts = normalized.split('/').filter(Boolean);
+        let current = '';
+        for (const part of parts) {
+            current = current ? `${current}/${part}` : part;
+            if (!await this.app.vault.adapter.exists(current)) {
+                await this.app.vault.adapter.mkdir(current);
+            }
         }
     }
 

@@ -20,11 +20,20 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 - 公众号排版预览（Obsidian 内）
 - 一键复制到公众号编辑器
 - 一键同步到公众号草稿箱
+- Codex/Claude Code 队列式保存到公众号草稿箱（通过 Obsidian CLI 触发）
 - 多主题（含整合主题包）
 - 多端预览切换（手机 / 平板 / 桌面）
 - S3 兼容图床配置
 - 复制时自动上传本地图片到云图床（在线图片自动跳过）
 - 图床 URL Style（`auto/path/virtual-hosted`，兼容 OSS）
+
+## 创作发布工作台
+插件当前围绕公众号最后一公里收束成四个模块：
+
+- 图床设计与诊断：S3 兼容配置、URL Style 选择、测试上传、公网可读校验、ACL/403 错误提示。
+- 主题选择：内置主题 + 外部主题包，支持默认样式、代码高亮、自定义 CSS 笔记。
+- 机型预览：在预览面板内切换手机 / 平板 / 桌面，发布前检查排版。
+- Agent 联动：Codex / Claude Code 写稿后写入发布请求，插件按公众号配置渲染、上传图片和封面，并保存到公众号草稿箱。
 
 ## 使用截图
 ![preview](./plugin/images/screenshot.png)
@@ -44,6 +53,8 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 6. 在 BRAT 里执行一次 `Check for updates`，确认版本刷新。
 7. 首次打开插件后，主题/高亮资源会自动下载；若网络较慢可在插件设置里手动点一次“下载”。
 
+仓库根目录已同步 `manifest.json`，Release 也会自动上传 `main.js / styles.css / manifest.json / assets.zip`，因此 BRAT 和手动安装走同一套产物。
+
 如果 BRAT 报错 `no manifest.json`，按下面排查：
 1. 在 BRAT 设置里先删除这条失败安装记录。
 2. 重启 Obsidian。
@@ -51,8 +62,8 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 4. 如果还失败，直接走“方式 B（Release 手动安装）”。
 
 ### 方式 B：Release 手动安装（纯图形界面，最稳）
-1. 打开发布页：`https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.0`
-2. 下载 `obsidian-to-mp-v1.0.0.zip`。
+1. 打开发布页：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
+2. 下载最新的 `obsidian-to-mp-v版本号.zip`。
 3. 打开你的 Vault 目录，进入 `.obsidian/plugins/`。
 4. 新建文件夹：`obsidian-to-mp`。
 5. 把压缩包里的 3 个文件拖进去：
@@ -78,16 +89,15 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 ```
 然后在 Obsidian 启用 `ObsidianToMP`。
 
-## 首发版本（v1.0.0）
-- 计划发布标签：`v1.0.0`
-- 下载地址（发布后可用）：`https://github.com/qianzhu18/ObsidianToMP/releases/tag/v1.0.0`
-- Release 附件应包含 4 个文件：
+## 当前发布产物
+- 当前插件版本：`v1.0.5`
+- 下载地址：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
+- Release 附件应包含：
   - `main.js`
   - `styles.css`
   - `manifest.json`
   - `assets.zip`（主题+高亮资源包）
-- 本地已生成首发包：
-  - `release/v1.0.0/obsidian-to-mp-v1.0.0.zip`
+  - `obsidian-to-mp-v版本号.zip`（手动安装包）
 
 ## 主题/高亮资源下载说明（外部账号）
 - 插件会优先从 `latest` release 下载 `assets.zip`，并兼容 `v1.0.0 / 1.0.0` 两种标签格式。
@@ -122,6 +132,38 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
    - 已是在线链接的图片会自动跳过
 5. 可选点击 `发文章` / `发图文`，一键保存到公众号草稿箱。
 
+## Codex 一键保存到公众号草稿箱
+适合“电脑端跑完 Codex，手机端继续最后编辑”的场景。
+
+前提：
+- Obsidian 桌面端正在运行
+- Obsidian 已开启 CLI
+- 当前 Vault 已启用 `ObsidianToMP`
+- 插件设置里已保存公众号信息
+
+Codex/Skill 写入请求文件：
+```json
+{
+  "note": "content/publish/文章名.md",
+  "account": "公众号名称或 wx 开头的 AppID",
+  "resultPath": "content/.obsidiantomp/publish-result.json"
+}
+```
+
+保存到：
+```text
+content/.obsidiantomp/publish-request.json
+```
+
+然后触发：
+```bash
+obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
+```
+
+完成后检查 `content/.obsidiantomp/publish-result.json`：
+- `ok: true`：已保存到公众号草稿箱，可在手机端继续编辑。
+- `ok: false`：查看 `error`，常见是公众号 IP 白名单、封面缺失、图片上传或内容异常。
+
 ## 第二方测试清单（建议直接照测）
 1. 安装验证：插件可启用，设置页能正常打开，版本号正确。
 2. 渲染验证：标题、列表、代码块、引用、Callout 显示正常。
@@ -138,11 +180,13 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 ## Agent 一键写作链路（CLI + Skill + 插件）
 目标：让 Agent 在本地自动完成「写作 -> 预览 -> 复制自动图床 -> 发布草稿」。
 
-1. 使用 Claude Code / Codex CLI 执行写作任务，输出到 Obsidian 指定目录（`.md`）。
-2. 将写作流程封装为可复用 Skill（提示词模板、标题结构、排版规则、发布前检查）。
-3. 在 Obsidian 打开该稿件，使用 ObsidianToMP 做多端预览（手机/平板/桌面）。
-4. 点击 `复制到公众号`，插件会自动上传本地图片并替换为云端链接（在线图片跳过）。
-5. 选择：
+1. 在 Obsidian 命令面板执行 `ObsidianToMP: 初始化公众号写作工作流`，生成 `content/inbox / content/review / content/publish` 与模板。
+2. 使用 Claude Code / Codex CLI 执行写作任务，输出到 Obsidian 指定目录（`.md`）。
+3. 将写作流程封装为可复用 Skill（提示词模板、标题结构、排版规则、发布前检查）。
+4. 在 Obsidian 打开该稿件，使用 ObsidianToMP 做多端预览（手机/平板/桌面）。
+5. 点击 `复制到公众号`，插件会自动上传本地图片并替换为云端链接（在线图片跳过）。
+6. 如果要无人值守保存草稿，让 Agent 写入 `content/.obsidiantomp/publish-request.json` 并触发命令 `obsidian-to-mp-publish-queued-draft`。
+7. 选择：
    - 复制到公众号编辑器，或
    - 一键同步到微信公众号草稿箱。
 
