@@ -1,3 +1,16 @@
+## 1.0.5 (ObsidianToMP fork)
+- 新增 `发布队列稿件到公众号草稿箱` 与 `无弹窗保存当前笔记到公众号草稿箱` 命令。
+- 支持 Codex/Claude Code 写入 `content/.obsidiantomp/publish-request.json` 后，通过 Obsidian CLI 直接保存到公众号草稿箱。
+- 发布结果会写回 `content/.obsidiantomp/publish-result.json`，便于 Agent 判断是否完成最后一公里。
+- 设置页新增 `Agent 保存草稿箱` 操作区，可为当前笔记生成请求并执行队列发布。
+
+## 1.0.4 (ObsidianToMP fork)
+- 新增 `初始化公众号写作工作流` 命令，生成 `content/inbox / review / publish` 与 Agent 写作模板。
+- 强化主题/高亮资源管理：默认兜底、重复项去重、损坏资源强制重下、清空后不误触发自动重下。
+- 强化资源包解压：拒绝非法路径，并自动创建缺失目录。
+- 强化云图床复制链路：上传后校验公网可读，ACL/403/URL Style 错误给出更明确提示。
+- 新增根目录 BRAT 识别产物同步脚本与 GitHub Release workflow，方便一键安装/更新。
+
 ## 1.0.0
 - Fork 首发版（ObsidianToMP）。
 - 品牌与帮助入口全部切换到 `qianzhu18/ObsidianToMP`。

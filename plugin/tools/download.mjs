@@ -1,71 +1,64 @@
-/*
- * Copyright (c) 2024-2025 Sun Booshi
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
+import fs from 'node:fs';
 import https from 'node:https';
-import { exec } from 'node:child_process';
 
-// 仓库信息
 const owner = 'sunbooshi';
 const repo = 'mweb-themes';
-const assetName = 'assets.zip'; // 要下载的文件名
-
-// GitHub API 获取最新 Release 信息
+const assetName = 'assets.zip';
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
 
-https.get(apiUrl, { headers: { 'User-Agent': 'Node.js' } }, (apiRes) => {
-    let data = '';
-
-    // 接收 API 响应数据
-    apiRes.on('data', (chunk) => {
+function requestJson(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { 'User-Agent': 'ObsidianToMP release tool' } }, (res) => {
+      let data = '';
+      res.on('data', chunk => {
         data += chunk;
-    });
-
-    apiRes.on('end', () => {
-        try {
-            const releaseInfo = JSON.parse(data);
-
-            // 查找 assets.zip 文件
-            const asset = releaseInfo.assets.find((a) => a.name === assetName);
-
-            if (!asset) {
-                console.error(`未找到 ${assetName} 文件`);
-                return;
-            }
-
-            const downloadUrl = asset.browser_download_url;
-            console.log(`找到 ${assetName}，下载链接: ${downloadUrl}`);
-
-            // 使用系统 wget 命令下载
-            exec(`wget "${downloadUrl}" -O "${assetName}"`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`下载失败: ${error}`);
-                    return;
-                }
-                console.log(`${assetName} 下载完成！`);
-            });
-        } catch (err) {
-            console.error('解析 API 响应失败:', err);
+      });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`GitHub API failed: HTTP ${res.statusCode} ${data}`));
+          return;
         }
-    });
-}).on('error', (err) => {
-    console.error('请求 GitHub API 失败:', err);
-});
+        try {
+          resolve(JSON.parse(data));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+function downloadFile(url, target) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { 'User-Agent': 'ObsidianToMP release tool' } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        downloadFile(res.headers.location, target).then(resolve, reject);
+        return;
+      }
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        reject(new Error(`Download failed: HTTP ${res.statusCode}`));
+        return;
+      }
+
+      const file = fs.createWriteStream(target);
+      res.pipe(file);
+      file.on('finish', () => {
+        file.close(resolve);
+      });
+      file.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+const releaseInfo = await requestJson(apiUrl);
+const asset = Array.isArray(releaseInfo.assets)
+  ? releaseInfo.assets.find(item => item.name === assetName)
+  : null;
+
+if (!asset?.browser_download_url) {
+  throw new Error(`未找到 ${assetName} 文件`);
+}
+
+console.log(`下载 ${assetName}: ${asset.browser_download_url}`);
+await downloadFile(asset.browser_download_url, assetName);
+console.log(`${assetName} 下载完成`);

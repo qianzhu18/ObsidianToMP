@@ -276,7 +276,7 @@ export class ArticleRender implements MDRendererCallback {
     // 上传图片
     await lm.uploadLocalImage(token, this.app.vault);
     // 上传图床图片
-    await lm.uploadRemoteImage(container, token);
+    await lm.uploadRemoteImage(container, token, '', this.app.vault);
     // 替换图片链接
     lm.replaceImages(container);
     this.imagesReplaced = true;
@@ -288,7 +288,25 @@ export class ArticleRender implements MDRendererCallback {
 
     if (cloudEnabled && cloudConfigured) {
       // Copy should upload only local/data images. Existing online links are kept as-is.
-      await this.uploadImagesToCloud(container, { skipRemoteImages: true });
+      const workingContainer = container.cloneNode(true) as HTMLElement;
+      try {
+        await this.uploadImagesToCloud(workingContainer, {
+          skipRemoteImages: true,
+          verifyPublicRead: true,
+        });
+        const content = this.getArticleContent(workingContainer, css);
+        await writeHtmlToClipboard(content);
+        return;
+      } catch (error) {
+        if (appid) {
+          console.warn('cloud upload unavailable during copy, fallback to WeChat upload:', error);
+          await this.uploadImages(appid, container);
+          const content = this.getArticleContent(container, css);
+          await writeHtmlToClipboard(content);
+          return;
+        }
+        throw error;
+      }
     } else if (appid) {
       await this.uploadImages(appid, container);
     } else if (cloudEnabled && !cloudConfigured) {
@@ -308,7 +326,10 @@ export class ArticleRender implements MDRendererCallback {
     );
   }
 
-  async uploadImagesToCloud(container: HTMLElement, options: { skipRemoteImages?: boolean } = {}) {
+  async uploadImagesToCloud(
+    container: HTMLElement,
+    options: { skipRemoteImages?: boolean; verifyPublicRead?: boolean } = {},
+  ) {
     if (!this.settings.cloudImageHost.enabled) {
       throw new Error('云端图床未启用，请先在设置中开启');
     }
@@ -317,13 +338,14 @@ export class ArticleRender implements MDRendererCallback {
     }
 
     const skipRemoteImages = !!options.skipRemoteImages;
+    const verifyPublicRead = options.verifyPublicRead !== false;
     const uploader = new CloudImageUploader(this.settings.cloudImageHost);
     await this.cachedElementsToImages(container);
     await this.imageManager.uploadImagesByHandler(
       container,
       this.app.vault,
       async (blob, filename) => {
-        const result = await uploader.uploadBlob(blob, filename);
+        const result = await uploader.uploadBlob(blob, filename, { verifyPublicRead });
         return result.url;
       },
       {
@@ -362,7 +384,7 @@ export class ArticleRender implements MDRendererCallback {
     // 上传图片
     await lm.uploadLocalImage(token, this.app.vault);
     // 上传图床图片
-    await lm.uploadRemoteImage(container, token);
+    await lm.uploadRemoteImage(container, token, '', this.app.vault);
     // 替换图片链接
     lm.replaceImages(container);
     this.imagesReplaced = true;
@@ -445,7 +467,7 @@ export class ArticleRender implements MDRendererCallback {
     // 上传图片
     await lm.uploadLocalImage(token, this.app.vault, 'image');
     // 上传图床图片
-    await lm.uploadRemoteImage(container, token, 'image');
+    await lm.uploadRemoteImage(container, token, 'image', this.app.vault);
 
     const images = lm.getImageInfos(container);
     for (const image of images) {

@@ -68,6 +68,9 @@ function parseErrorMessage(status: number, text: string) {
   if (isSecondLevelDomainForbidden(t)) {
     return '上传失败：当前图床要求使用 virtual-hosted-style，请在插件设置将 URL Style 切换为 “virtual-hosted” 或 “auto”。';
   }
+  if (isBucketAclAccessDenied(t)) {
+    return '上传失败：对象存储拒绝访问（Bucket ACL/权限策略）。请将存储桶或对象设置为可公开读取，或配置可公网访问的 Public Base URL。';
+  }
   if (t.length === 0) {
     return `上传失败，HTTP ${status}`;
   }
@@ -79,11 +82,19 @@ function isSecondLevelDomainForbidden(text: string) {
     || /Please use virtual hosted style/i.test(text);
 }
 
+function isBucketAclAccessDenied(text: string) {
+  return /AccessDenied/i.test(text) && /bucket acl/i.test(text);
+}
+
 type S3UrlStyle = 'path' | 'virtual-hosted';
 
 interface UploadResponse {
   status: number;
   text: string;
+}
+
+interface UploadBlobOptions {
+  verifyPublicRead?: boolean;
 }
 
 export class CloudImageUploader {
@@ -267,7 +278,7 @@ export class CloudImageUploader {
     return false;
   }
 
-  async uploadBlob(blob: Blob, fileName: string): Promise<CloudUploadResult> {
+  async uploadBlob(blob: Blob, fileName: string, options?: UploadBlobOptions): Promise<CloudUploadResult> {
     this.validate();
     const objectKey = this.makeObjectKey(fileName, blob.type || 'image/jpeg');
     const preferredStyle = this.getUrlStyle();
@@ -287,10 +298,35 @@ export class CloudImageUploader {
       throw new Error(parseErrorMessage(response.status, response.text || ''));
     }
 
-    return {
+    const result = {
       key: objectKey,
       url: this.getPublicUrl(objectKey, usedStyle),
     };
+    if (options?.verifyPublicRead) {
+      await this.assertPublicReadable(result.url);
+    }
+    return result;
+  }
+
+  async assertPublicReadable(url: string) {
+    const res = await requestUrl({
+      url,
+      method: 'GET',
+      throw: false,
+      headers: {
+        Range: 'bytes=0-0',
+      },
+    });
+
+    if (res.status >= 200 && res.status < 400) {
+      return;
+    }
+
+    const text = (res.text || '').trim();
+    if (res.status === 403 || isBucketAclAccessDenied(text)) {
+      throw new Error('图片已上传但无法公网访问（HTTP 403 / AccessDenied）。请将 OSS Bucket 读权限设置为“公共读”，或配置可公网访问的 Public Base URL。');
+    }
+    throw new Error(`图片已上传但公网访问失败（HTTP ${res.status}）。请检查图床域名与权限配置。`);
   }
 
   async uploadTestImage() {
@@ -298,6 +334,6 @@ export class CloudImageUploader {
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9lQw2CgAAAABJRU5ErkJggg==';
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: 'image/png' });
-    return this.uploadBlob(blob, 'health-check.png');
+    return this.uploadBlob(blob, 'health-check.png', { verifyPublicRead: true });
   }
 }

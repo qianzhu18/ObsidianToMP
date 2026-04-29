@@ -1,0 +1,83 @@
+name: Release Obsidian plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag, for example v1.0.4
+        required: true
+        type: string
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag_name || github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: plugin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: plugin
+        run: npm ci
+
+      - name: Build plugin
+        working-directory: plugin
+        run: npm run build
+
+      - name: Download theme assets
+        working-directory: plugin
+        run: npm run download
+
+      - name: Prepare release assets
+        run: |
+          node plugin/tools/sync-root.mjs
+          rm -rf dist
+          mkdir -p dist
+          cp plugin/main.js plugin/styles.css plugin/manifest.json dist/
+          if [ -f plugin/assets.zip ]; then
+            cp plugin/assets.zip dist/assets.zip
+          elif [ -d plugin/assets ]; then
+            (cd plugin/assets && zip -r ../../dist/assets.zip .)
+          else
+            echo "Missing assets.zip and plugin/assets" >&2
+            exit 1
+          fi
+          (cd dist && zip -r "obsidian-to-mp-${TAG_NAME}.zip" main.js styles.css manifest.json)
+
+      - name: Publish GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" \
+              dist/main.js \
+              dist/styles.css \
+              dist/manifest.json \
+              dist/assets.zip \
+              "dist/obsidian-to-mp-${TAG_NAME}.zip" \
+              --clobber
+          else
+            gh release create "$TAG_NAME" \
+              --target "$GITHUB_SHA" \
+              --title "$TAG_NAME" \
+              --notes "ObsidianToMP ${TAG_NAME}" \
+              dist/main.js \
+              dist/styles.css \
+              dist/manifest.json \
+              dist/assets.zip \
+              "dist/obsidian-to-mp-${TAG_NAME}.zip"
+          fi
