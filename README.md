@@ -4,7 +4,8 @@
 > 重点解决本地图片上传痛点：支持配置 **S3 兼容图床**（如 Cloudflare R2 / MinIO / 兼容 S3 的对象存储）。
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](./plugin/LICENSE)
-[![Stable Branch](https://img.shields.io/badge/branch-stable-blue)](https://github.com/qianzhu18/ObsidianToMP/tree/stable)
+[![Latest Release](https://img.shields.io/github/v/release/qianzhu18/ObsidianToMP?label=release)](https://github.com/qianzhu18/ObsidianToMP/releases/latest)
+[![Main Branch](https://img.shields.io/badge/branch-main-blue)](https://github.com/qianzhu18/ObsidianToMP/tree/main)
 
 ## 为什么做这个项目
 很多人用 Obsidian 写公众号，最大痛点有两个：
@@ -16,7 +17,7 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 - 支持本地预览 + 复制 + 发草稿
 - 支持你自己的云图床
 
-## 主要能力（当前 stable）
+## 主要能力（当前版本）
 - 公众号排版预览（Obsidian 内）
 - 一键复制到公众号编辑器
 - 一键同步到公众号草稿箱
@@ -37,6 +38,72 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 
 ## 使用截图
 ![preview](./plugin/images/screenshot.png)
+
+## 小白一键配置：把这段发给 Codex / Claude Code
+如果你不想手动研究插件配置，可以把下面这一段直接复制给 Codex 或 Claude Code。它会先读取本仓库 README 和配套 skill，再帮你完成插件安装、写作目录初始化、Agent 发布队列配置和一次测试稿验证。
+
+### 给 Codex 的提示词
+```text
+请帮我配置 ObsidianToMP 公众号发布工作流。
+
+项目地址：https://github.com/qianzhu18/ObsidianToMP
+配套 Codex skill：https://github.com/qianzhu18/ObsidianToMP/tree/main/agent/skills/obsidian-to-mp-agent
+
+我的 Obsidian Vault 路径是：<填你的 Vault 绝对路径>
+我的 Obsidian Vault 名称是：<填 Obsidian 左侧 vault 名称>
+
+请你完成：
+1. 阅读项目 README 和配套 skill。
+2. 使用 skill-installer 安装配套 Codex skill，安装后提醒我重启 Codex。
+3. 检查或安装 ObsidianToMP 插件到这个 Vault。
+4. 初始化 content/inbox、content/review、content/publish、content/.obsidiantomp。
+5. 引导我在 ObsidianToMP 设置页填写公众号和图床配置，不要在聊天里打印 AppSecret、S3 Secret。
+6. 创建一篇测试稿，生成 publish-request.json。
+7. 如果 Obsidian CLI 可用，触发 obsidian-to-mp-publish-queued-draft，并检查 publish-result.json。
+8. 如果不能自动保存草稿，请明确告诉我卡在哪一步，以及我需要在 Obsidian 里点哪个按钮。
+```
+
+Codex 安装 skill 后需要重启一次，之后可以直接说：
+```text
+使用 $obsidian-to-mp-agent，根据这个选题写一篇公众号文章，保存到我的 Obsidian，并交给 ObsidianToMP 保存到公众号草稿箱：<你的选题>
+```
+
+### 给 Claude Code 的提示词
+Claude Code 可以直接读取仓库链接和 `SKILL.md`。如果你的 Claude Code 没有类似 Codex 的 skill 安装器，就让它把这份 skill 当成项目说明执行。
+
+```text
+请帮我配置 ObsidianToMP 公众号发布工作流。
+
+先读取：
+1. https://github.com/qianzhu18/ObsidianToMP
+2. https://raw.githubusercontent.com/qianzhu18/ObsidianToMP/main/agent/skills/obsidian-to-mp-agent/SKILL.md
+
+我的 Obsidian Vault 路径是：<填你的 Vault 绝对路径>
+我的 Obsidian Vault 名称是：<填 Obsidian 左侧 vault 名称>
+
+请按 SKILL.md 的流程完成：
+1. 检查或安装 ObsidianToMP 插件。
+2. 初始化写作目录和发布队列。
+3. 引导我填写公众号和图床配置，密钥只写入本地 Obsidian 插件配置，不要打印到聊天。
+4. 生成一篇测试稿和 publish-request.json。
+5. 尝试通过 Obsidian CLI 保存到公众号草稿箱，并读取 publish-result.json。
+6. 如果我的环境不能自动触发，请生成一份可复制到 CLAUDE.md 的本地说明，让以后 Claude Code 知道怎么交接给 ObsidianToMP。
+```
+
+### 你需要提前准备的资料
+- Obsidian Vault 路径和 Vault 名称。
+- 公众号 `名称 / AppID / AppSecret`。
+- 公众号后台 IP 白名单权限。
+- 可选：S3 兼容图床信息，如 Cloudflare R2、MinIO、OSS 兼容 S3。
+- 可选：默认封面图素材或公众号永久素材。
+
+### Agent 最终会交付什么
+- 插件安装或更新完成。
+- 配套 skill 已安装，或 Claude Code 已读取同等说明。
+- Vault 内生成 `content/inbox`、`content/review`、`content/publish`、`content/.obsidiantomp`。
+- 终稿 Markdown 写入 `content/publish/`。
+- 发布请求写入 `content/.obsidiantomp/publish-request.json`。
+- 保存结果写入 `content/.obsidiantomp/publish-result.json`。
 
 ## 安装到 Obsidian（零代码优先）
 
@@ -81,7 +148,7 @@ ObsidianToMP 的目标是做成一个 **体感良好、上手即用** 的本地�
 ```bash
 git clone https://github.com/qianzhu18/ObsidianToMP.git
 cd ObsidianToMP
-git checkout stable
+git checkout main
 cd plugin
 npm install
 npm run build
@@ -164,6 +231,25 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
 - `ok: true`：已保存到公众号草稿箱，可在手机端继续编辑。
 - `ok: false`：查看 `error`，常见是公众号 IP 白名单、封面缺失、图片上传或内容异常。
 
+## 配套 Skill
+本仓库自带一个可给 Agent 使用的 skill：
+
+- Skill 目录：[`agent/skills/obsidian-to-mp-agent`](./agent/skills/obsidian-to-mp-agent)
+- 原始 `SKILL.md`：`https://raw.githubusercontent.com/qianzhu18/ObsidianToMP/main/agent/skills/obsidian-to-mp-agent/SKILL.md`
+
+它覆盖四类任务：
+- 新手安装：检查 Vault、安装插件、启用插件、初始化目录。
+- 内容创作：按公众号结构写 Markdown，放到 `content/inbox` 或 `content/publish`。
+- 渲染交接：让 ObsidianToMP 做主题、代码高亮、机型预览和本地图片上传。
+- 草稿箱保存：写入 `publish-request.json`，触发 Obsidian CLI，读取 `publish-result.json`。
+
+Codex 用户可以直接让 Codex 安装：
+```text
+请用 skill-installer 从这个 GitHub 路径安装 skill：
+https://github.com/qianzhu18/ObsidianToMP/tree/main/agent/skills/obsidian-to-mp-agent
+安装完成后提醒我重启 Codex。
+```
+
 ## 第二方测试清单（建议直接照测）
 1. 安装验证：插件可启用，设置页能正常打开，版本号正确。
 2. 渲染验证：标题、列表、代码块、引用、Callout 显示正常。
@@ -209,13 +295,15 @@ codex run "根据选题卡生成公众号稿件，写入 content/inbox/xxx.md"
 - [agent/BMAD_OBSIDIAN_CLI_PLAYBOOK.md](./agent/BMAD_OBSIDIAN_CLI_PLAYBOOK.md)
 
 ## 分支策略（稳定可回退）
-- `stable`：稳定可用版本，只接收验证过的修复。
-- `main`：对外主线，周期性同步 `stable`。
-- `codex/agent-exploration`：Agent 能力探索分支（CLI + Skill 集成实验）。
+- `main`：对外主线，README、Release 和可安装产物都以它为准。
+- `docs/*`：文档和新手上手流程。
+- `feat/*`：功能开发分支，合并前通过构建和手动验证。
+- `stable`：历史稳定分支，保留给需要旧版本回退的用户。
 
 回退方式：
 ```bash
-git checkout stable
+git fetch --tags
+git checkout v1.0.5
 ```
 
 ## 研发路线（Road to 50 stars）
