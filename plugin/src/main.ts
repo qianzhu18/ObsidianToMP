@@ -42,7 +42,7 @@ interface PublishDraftRequest {
 
 interface PublishDraftResult {
 	ok: boolean;
-	status: 'success' | 'error';
+	status: 'running' | 'success' | 'error';
 	note?: string;
 	media_id?: string;
 	appid?: string;
@@ -88,7 +88,8 @@ export default class NoteToMpPlugin extends Plugin {
 	assetsManager: any;
 	constructor(app: App, manifest: PluginManifest) {
 	    super(app, manifest);
-			this.assetsManager = null;
+		this.settings = NMPSettings.getInstance();
+		this.assetsManager = null;
 	}
 
 	private tryLoadStyle() {
@@ -135,7 +136,18 @@ export default class NoteToMpPlugin extends Plugin {
 			if (existing) {
 				throw new Error(`${current} 已存在但不是文件夹`);
 			}
-			await this.app.vault.createFolder(current);
+			if (await this.app.vault.adapter.exists(current)) {
+				continue;
+			}
+			try {
+				await this.app.vault.createFolder(current);
+			} catch (error) {
+				const msg = error instanceof Error ? error.message : String(error);
+				if (msg.includes('Folder already exists')) {
+					continue;
+				}
+				throw error;
+			}
 		}
 	}
 
@@ -231,7 +243,7 @@ export default class NoteToMpPlugin extends Plugin {
 2. 人工校对后移动到 \`content/review/\`。
 3. 终稿移动到 \`content/publish/\`。
 4. 在 Obsidian 打开终稿，执行“复制到公众号”或“发布公众号文章”。
-5. 如果要让 Codex 直接保存到草稿箱，写入 \`content/.obsidiantomp/publish-request.json\` 后执行命令 \`obsidian-to-mp-publish-queued-draft\`。
+5. 如果要让 Codex 直接保存到草稿箱，写入 \`content/.obsidiantomp/publish-request.json\` 后执行命令 \`obsidian-to-mp:obsidian-to-mp-publish-queued-draft\`。
 
 Codex 示例：
 \`\`\`bash
@@ -249,7 +261,7 @@ codex run "根据选题卡生成公众号稿件，写入当前 vault 的 content
 
 触发 Obsidian CLI：
 \`\`\`bash
-obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
+obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish-queued-draft"
 \`\`\`
 
 注意：
@@ -400,9 +412,24 @@ obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
 		try {
 			request = await this.readPublishRequest(requestPath);
 			resultPath = request.resultPath ? this.normalizeVaultPath(request.resultPath) : PUBLISH_RESULT_PATH;
+			await this.writePublishResult(resultPath, {
+				ok: false,
+				status: 'running',
+				note: request.note || request.notePath || request.path,
+				requestId: request.requestId,
+				publishedAt: new Date().toISOString(),
+			});
 			const file = this.resolvePublishFile(request);
 			await this.loadResource();
 			const appid = this.resolveRequestedAppid(request.account || request.appid);
+			await this.writePublishResult(resultPath, {
+				ok: false,
+				status: 'running',
+				note: file.path,
+				appid,
+				requestId: request.requestId,
+				publishedAt: new Date().toISOString(),
+			});
 			const mediaId = await this.publishNoteToDraft(file, appid);
 			const result: PublishDraftResult = {
 				ok: true,

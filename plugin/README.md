@@ -105,7 +105,7 @@ content/.obsidiantomp/publish-request.json
 然后通过 Obsidian CLI 触发：
 
 ```bash
-obsidian vault="<Vault名称>" command id="obsidian-to-mp-publish-queued-draft"
+obsidian vault="<Vault名称>" command id="obsidian-to-mp:obsidian-to-mp-publish-queued-draft"
 ```
 
 插件会渲染目标 Markdown、上传图片和封面、调用微信公众号草稿 API，并把结果写回 `publish-result.json`。

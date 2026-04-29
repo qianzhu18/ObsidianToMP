@@ -110547,6 +110547,7 @@ var FallbackPreviewView = class extends import_obsidian15.ItemView {
 var NoteToMpPlugin = class extends import_obsidian15.Plugin {
   constructor(app, manifest) {
     super(app, manifest);
+    this.settings = NMPSettings.getInstance();
     this.assetsManager = null;
   }
   tryLoadStyle() {
@@ -110590,7 +110591,18 @@ var NoteToMpPlugin = class extends import_obsidian15.Plugin {
       if (existing) {
         throw new Error(`${current2} \u5DF2\u5B58\u5728\u4F46\u4E0D\u662F\u6587\u4EF6\u5939`);
       }
-      await this.app.vault.createFolder(current2);
+      if (await this.app.vault.adapter.exists(current2)) {
+        continue;
+      }
+      try {
+        await this.app.vault.createFolder(current2);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes("Folder already exists")) {
+          continue;
+        }
+        throw error;
+      }
     }
   }
   async createWorkflowFileIfMissing(path, content, created) {
@@ -110681,7 +110693,7 @@ var NoteToMpPlugin = class extends import_obsidian15.Plugin {
 2. \u4EBA\u5DE5\u6821\u5BF9\u540E\u79FB\u52A8\u5230 \`content/review/\`\u3002
 3. \u7EC8\u7A3F\u79FB\u52A8\u5230 \`content/publish/\`\u3002
 4. \u5728 Obsidian \u6253\u5F00\u7EC8\u7A3F\uFF0C\u6267\u884C\u201C\u590D\u5236\u5230\u516C\u4F17\u53F7\u201D\u6216\u201C\u53D1\u5E03\u516C\u4F17\u53F7\u6587\u7AE0\u201D\u3002
-5. \u5982\u679C\u8981\u8BA9 Codex \u76F4\u63A5\u4FDD\u5B58\u5230\u8349\u7A3F\u7BB1\uFF0C\u5199\u5165 \`content/.obsidiantomp/publish-request.json\` \u540E\u6267\u884C\u547D\u4EE4 \`obsidian-to-mp-publish-queued-draft\`\u3002
+5. \u5982\u679C\u8981\u8BA9 Codex \u76F4\u63A5\u4FDD\u5B58\u5230\u8349\u7A3F\u7BB1\uFF0C\u5199\u5165 \`content/.obsidiantomp/publish-request.json\` \u540E\u6267\u884C\u547D\u4EE4 \`obsidian-to-mp:obsidian-to-mp-publish-queued-draft\`\u3002
 
 Codex \u793A\u4F8B\uFF1A
 \`\`\`bash
@@ -110699,7 +110711,7 @@ codex run "\u6839\u636E\u9009\u9898\u5361\u751F\u6210\u516C\u4F17\u53F7\u7A3F\u4
 
 \u89E6\u53D1 Obsidian CLI\uFF1A
 \`\`\`bash
-obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp-publish-queued-draft"
+obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp:obsidian-to-mp-publish-queued-draft"
 \`\`\`
 
 \u6CE8\u610F\uFF1A
@@ -110834,9 +110846,24 @@ obsidian vault="<Vault\u540D\u79F0>" command id="obsidian-to-mp-publish-queued-d
     try {
       request = await this.readPublishRequest(requestPath);
       resultPath = request.resultPath ? this.normalizeVaultPath(request.resultPath) : PUBLISH_RESULT_PATH;
+      await this.writePublishResult(resultPath, {
+        ok: false,
+        status: "running",
+        note: request.note || request.notePath || request.path,
+        requestId: request.requestId,
+        publishedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
       const file = this.resolvePublishFile(request);
       await this.loadResource();
       const appid = this.resolveRequestedAppid(request.account || request.appid);
+      await this.writePublishResult(resultPath, {
+        ok: false,
+        status: "running",
+        note: file.path,
+        appid,
+        requestId: request.requestId,
+        publishedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
       const mediaId = await this.publishNoteToDraft(file, appid);
       const result = {
         ok: true,
