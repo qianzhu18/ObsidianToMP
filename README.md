@@ -179,7 +179,7 @@ ln -sfn "/绝对路径/ObsidianToMP/plugin" "<你的Vault路径>/.obsidian/plugi
 然后在 Obsidian 启用 `ObsidianToMP`。
 
 ## 当前发布产物
-- 当前插件版本：`v1.0.7`
+- 当前插件版本：`v1.0.8`
 - 下载地址：`https://github.com/qianzhu18/ObsidianToMP/releases/latest`
 - Release 附件应包含：
   - `main.js`

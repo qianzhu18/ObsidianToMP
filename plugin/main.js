@@ -5801,10 +5801,61 @@ function trimEmbedTag(name) {
   return name.trim().replace(/^!\[\[/, "").replace(/^\[\[/, "").replace(/]]$/, "");
 }
 function removeFrontMatter(md) {
-  if (md.startsWith("---")) {
-    return md.replace(FRONT_MATTER_REGEX, "");
+  return md.replace(FRONT_MATTER_REGEX, "");
+}
+function stripLooseFrontMatter(md) {
+  const lines = md.replace(/^\uFEFF/, "").split(/\r?\n/);
+  let index2 = 0;
+  let sawKnownKey = false;
+  while (index2 < lines.length) {
+    const line = lines[index2];
+    if (line.trim() === "") {
+      break;
+    }
+    const keyMatch = line.match(/^([A-Za-z0-9_\-\u4e00-\u9fa5]+)\s*:/);
+    if (keyMatch && LOOSE_FRONT_MATTER_KEYS.has(keyMatch[1].toLowerCase())) {
+      sawKnownKey = true;
+      index2 += 1;
+      continue;
+    }
+    if (sawKnownKey && /^[ \t]+/.test(line)) {
+      index2 += 1;
+      continue;
+    }
+    return md;
   }
-  return md;
+  if (!sawKnownKey) {
+    return md;
+  }
+  while (index2 < lines.length && lines[index2].trim() === "") {
+    index2 += 1;
+  }
+  return lines.slice(index2).join("\n");
+}
+function normalizeBareCallouts(md) {
+  const lines = md.split(/\r?\n/);
+  const output = [];
+  for (let index2 = 0; index2 < lines.length; index2 += 1) {
+    const line = lines[index2];
+    const calloutMatch = line.match(/^\s*\[!([A-Za-z][\w-]*)\]([+-])?(\s+.*)?$/);
+    if (!calloutMatch) {
+      output.push(line);
+      continue;
+    }
+    output.push(`> ${line.trim()}`);
+    while (index2 + 1 < lines.length) {
+      const next = lines[index2 + 1];
+      if (next.trim() === "") {
+        break;
+      }
+      index2 += 1;
+      output.push(next.startsWith(">") ? next : `> ${next}`);
+    }
+  }
+  return output.join("\n");
+}
+function prepareMarkdownForRender(md) {
+  return normalizeBareCallouts(stripLooseFrontMatter(removeFrontMatter(md)));
 }
 function compareVersions(v1, v2) {
   const parts1 = v1.split(".").map(Number);
@@ -5844,14 +5895,40 @@ function matchesVersionRequirement(currentVersion, targetVersion) {
       return true;
   }
 }
-var import_obsidian, PluginVersion, PlugPlatform, postcssModule, FRONT_MATTER_REGEX;
+var import_obsidian, PluginVersion, PlugPlatform, postcssModule, FRONT_MATTER_REGEX, LOOSE_FRONT_MATTER_KEYS;
 var init_utils = __esm({
   "src/utils.ts"() {
     import_obsidian = require("obsidian");
     PluginVersion = "0.0.0";
     PlugPlatform = "obsidian";
     postcssModule = null;
-    FRONT_MATTER_REGEX = /^(---)$.+?^(---)$.+?/ims;
+    FRONT_MATTER_REGEX = /^\uFEFF?---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
+    LOOSE_FRONT_MATTER_KEYS = /* @__PURE__ */ new Set([
+      "title",
+      "description",
+      "desc",
+      "author",
+      "digest",
+      "cover",
+      "thumb_media_id",
+      "content_source_url",
+      "appid",
+      "account",
+      "\u516C\u4F17\u53F7",
+      "style",
+      "theme",
+      "highlight",
+      "css",
+      "source",
+      "platform",
+      "status",
+      "created",
+      "date",
+      "tags",
+      "need_open_comment",
+      "only_fans_can_comment",
+      "crop"
+    ]);
   }
 });
 
@@ -74549,7 +74626,7 @@ var init_article_render = __esm({
           } else {
             md = "\u6CA1\u6709\u53EF\u6E32\u67D3\u7684\u7B14\u8BB0\u6216\u6587\u4EF6\u4E0D\u652F\u6301\u6E32\u67D3";
           }
-          md = removeFrontMatter(md);
+          md = prepareMarkdownForRender(md);
           if (this.note && this.note.path !== af.path) {
             this.imageManager.cleanup();
           }
