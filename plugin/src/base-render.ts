@@ -27,7 +27,7 @@ import AssetsManager from './assets';
 import { MDRendererCallback } from './markdown/extension';
 import { MarkedParser } from './markdown/parser';
 import { LocalImageManager, LocalFile } from './markdown/local-file';
-import { debounce, normalizePasteHTML, removeFrontMatter, writeHtmlToClipboard } from './utils';
+import { debounce, normalizePasteHTML, prepareMarkdownForRender, writeHtmlToClipboard } from './utils';
 import { toPng } from 'html-to-image';
 
 
@@ -86,7 +86,7 @@ export class BaseRender implements MDRendererCallback {
       else {
         md = '没有可渲染的笔记或文件不支持渲染';
       }
-      md = removeFrontMatter(md);
+      md = prepareMarkdownForRender(md);
 
       if (this.note && this.note.path !== af.path) {
         this.imageManager.cleanup();

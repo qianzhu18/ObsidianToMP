@@ -434,12 +434,103 @@ export function escapeHTML(str: string) {
   return str.replace(/[&<>"']/g, (ch) => escapeMap[ch]);
 }
 
-const FRONT_MATTER_REGEX = /^(---)$.+?^(---)$.+?/ims;
+const FRONT_MATTER_REGEX = /^\uFEFF?---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
 export function removeFrontMatter(md: string) {
-	if (md.startsWith('---')) {
-    return md.replace(FRONT_MATTER_REGEX, '');
-  }
-	return md;
+	return md.replace(FRONT_MATTER_REGEX, '');
+}
+
+const LOOSE_FRONT_MATTER_KEYS = new Set([
+	'title',
+	'description',
+	'desc',
+	'author',
+	'digest',
+	'cover',
+	'thumb_media_id',
+	'content_source_url',
+	'appid',
+	'account',
+	'公众号',
+	'style',
+	'theme',
+	'highlight',
+	'css',
+	'source',
+	'platform',
+	'status',
+	'created',
+	'date',
+	'tags',
+	'need_open_comment',
+	'only_fans_can_comment',
+	'crop',
+]);
+
+function stripLooseFrontMatter(md: string) {
+	const lines = md.replace(/^\uFEFF/, '').split(/\r?\n/);
+	let index = 0;
+	let sawKnownKey = false;
+
+	while (index < lines.length) {
+		const line = lines[index];
+		if (line.trim() === '') {
+			break;
+		}
+
+		const keyMatch = line.match(/^([A-Za-z0-9_\-\u4e00-\u9fa5]+)\s*:/);
+		if (keyMatch && LOOSE_FRONT_MATTER_KEYS.has(keyMatch[1].toLowerCase())) {
+			sawKnownKey = true;
+			index += 1;
+			continue;
+		}
+
+		if (sawKnownKey && /^[ \t]+/.test(line)) {
+			index += 1;
+			continue;
+		}
+
+		return md;
+	}
+
+	if (!sawKnownKey) {
+		return md;
+	}
+
+	while (index < lines.length && lines[index].trim() === '') {
+		index += 1;
+	}
+
+	return lines.slice(index).join('\n');
+}
+
+function normalizeBareCallouts(md: string) {
+	const lines = md.split(/\r?\n/);
+	const output: string[] = [];
+
+	for (let index = 0; index < lines.length; index += 1) {
+		const line = lines[index];
+		const calloutMatch = line.match(/^\s*\[!([A-Za-z][\w-]*)\]([+-])?(\s+.*)?$/);
+		if (!calloutMatch) {
+			output.push(line);
+			continue;
+		}
+
+		output.push(`> ${line.trim()}`);
+		while (index + 1 < lines.length) {
+			const next = lines[index + 1];
+			if (next.trim() === '') {
+				break;
+			}
+			index += 1;
+			output.push(next.startsWith('>') ? next : `> ${next}`);
+		}
+	}
+
+	return output.join('\n');
+}
+
+export function prepareMarkdownForRender(md: string) {
+	return normalizeBareCallouts(stripLooseFrontMatter(removeFrontMatter(md)));
 }
 
 /**
