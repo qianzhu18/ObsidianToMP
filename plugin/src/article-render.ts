@@ -93,6 +93,30 @@ export class ArticleRender implements MDRendererCallback {
     return CardDataManager.getInstance().restoreCard(html);
   }
 
+  async getEmbeddedArticleContent(container: HTMLElement, css: string) {
+    const workingContainer = container.cloneNode(true) as HTMLElement;
+    await this.cachedElementsToImages(workingContainer);
+    const embeddedContent = await this.imageManager.embleImages(workingContainer, this.app.vault);
+    let html = applyCSS(embeddedContent, css);
+    html = html.replace(/rel="noopener nofollow"/g, '');
+    html = html.replace(/target="_blank"/g, '');
+    html = html.replace(/data-leaf=""/g, 'leaf=""');
+    html = normalizePasteHTML(html);
+    return CardDataManager.getInstance().restoreCard(html);
+  }
+
+  assertNoUnresolvedLocalImages(content: string) {
+    const unresolvedLocalImagePattern = /<img\b[^>]*\bsrc\s*=\s*(["']?)(?:app:\/\/|file:\/\/|obsidian:\/\/|resource:\/\/|capacitor:\/\/localhost\/|http:\/\/localhost\/)/i;
+    if (unresolvedLocalImagePattern.test(content)) {
+      throw new Error('复制失败：正文仍包含 Obsidian 本地图片链接。请先配置公众号或云端图床，或刷新工作台后重试。');
+    }
+  }
+
+  async writeArticleClipboard(content: string) {
+    this.assertNoUnresolvedLocalImages(content);
+    await writeHtmlToClipboard(content);
+  }
+
   getArticleText(container: HTMLElement) {
     return container.innerText.trimStart();
   }
@@ -295,14 +319,14 @@ export class ArticleRender implements MDRendererCallback {
           verifyPublicRead: true,
         });
         const content = this.getArticleContent(workingContainer, css);
-        await writeHtmlToClipboard(content);
+        await this.writeArticleClipboard(content);
         return;
       } catch (error) {
         if (appid) {
           console.warn('cloud upload unavailable during copy, fallback to WeChat upload:', error);
           await this.uploadImages(appid, container);
           const content = this.getArticleContent(container, css);
-          await writeHtmlToClipboard(content);
+          await this.writeArticleClipboard(content);
           return;
         }
         throw error;
@@ -312,8 +336,10 @@ export class ArticleRender implements MDRendererCallback {
     } else if (cloudEnabled && !cloudConfigured) {
       throw new Error('云端图床已启用但配置不完整，请补全 Endpoint/Bucket/AccessKey/Secret，或先关闭该开关');
     }
-    const content = this.getArticleContent(container, css);
-    await writeHtmlToClipboard(content);
+    const content = appid
+      ? this.getArticleContent(container, css)
+      : await this.getEmbeddedArticleContent(container, css);
+    await this.writeArticleClipboard(content);
   }
 
   private isCloudHostConfigured() {

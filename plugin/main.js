@@ -5785,6 +5785,7 @@ function mimeToImageExt(type) {
   return mimeToExt[type] || ".jpg";
 }
 function imageExtToMime(ext) {
+  ext = ext.startsWith(".") ? ext.toLowerCase() : `.${ext.toLowerCase()}`;
   const extToMime = {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
@@ -74610,6 +74611,27 @@ var init_article_render = __esm({
         html2 = normalizePasteHTML(html2);
         return CardDataManager.getInstance().restoreCard(html2);
       }
+      async getEmbeddedArticleContent(container, css2) {
+        const workingContainer = container.cloneNode(true);
+        await this.cachedElementsToImages(workingContainer);
+        const embeddedContent = await this.imageManager.embleImages(workingContainer, this.app.vault);
+        let html2 = applyCSS(embeddedContent, css2);
+        html2 = html2.replace(/rel="noopener nofollow"/g, "");
+        html2 = html2.replace(/target="_blank"/g, "");
+        html2 = html2.replace(/data-leaf=""/g, 'leaf=""');
+        html2 = normalizePasteHTML(html2);
+        return CardDataManager.getInstance().restoreCard(html2);
+      }
+      assertNoUnresolvedLocalImages(content) {
+        const unresolvedLocalImagePattern = /<img\b[^>]*\bsrc\s*=\s*(["']?)(?:app:\/\/|file:\/\/|obsidian:\/\/|resource:\/\/|capacitor:\/\/localhost\/|http:\/\/localhost\/)/i;
+        if (unresolvedLocalImagePattern.test(content)) {
+          throw new Error("\u590D\u5236\u5931\u8D25\uFF1A\u6B63\u6587\u4ECD\u5305\u542B Obsidian \u672C\u5730\u56FE\u7247\u94FE\u63A5\u3002\u8BF7\u5148\u914D\u7F6E\u516C\u4F17\u53F7\u6216\u4E91\u7AEF\u56FE\u5E8A\uFF0C\u6216\u5237\u65B0\u5DE5\u4F5C\u53F0\u540E\u91CD\u8BD5\u3002");
+        }
+      }
+      async writeArticleClipboard(content) {
+        this.assertNoUnresolvedLocalImages(content);
+        await writeHtmlToClipboard(content);
+      }
       getArticleText(container) {
         return container.innerText.trimStart();
       }
@@ -74780,14 +74802,14 @@ ${customCSS}`;
               verifyPublicRead: true
             });
             const content2 = this.getArticleContent(workingContainer, css2);
-            await writeHtmlToClipboard(content2);
+            await this.writeArticleClipboard(content2);
             return;
           } catch (error) {
             if (appid) {
               console.warn("cloud upload unavailable during copy, fallback to WeChat upload:", error);
               await this.uploadImages(appid, container);
               const content2 = this.getArticleContent(container, css2);
-              await writeHtmlToClipboard(content2);
+              await this.writeArticleClipboard(content2);
               return;
             }
             throw error;
@@ -74797,8 +74819,8 @@ ${customCSS}`;
         } else if (cloudEnabled && !cloudConfigured) {
           throw new Error("\u4E91\u7AEF\u56FE\u5E8A\u5DF2\u542F\u7528\u4F46\u914D\u7F6E\u4E0D\u5B8C\u6574\uFF0C\u8BF7\u8865\u5168 Endpoint/Bucket/AccessKey/Secret\uFF0C\u6216\u5148\u5173\u95ED\u8BE5\u5F00\u5173");
         }
-        const content = this.getArticleContent(container, css2);
-        await writeHtmlToClipboard(content);
+        const content = appid ? this.getArticleContent(container, css2) : await this.getEmbeddedArticleContent(container, css2);
+        await this.writeArticleClipboard(content);
       }
       isCloudHostConfigured() {
         var _a, _b, _c, _d;

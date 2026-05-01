@@ -107,7 +107,8 @@ export class BaseRender implements MDRendererCallback {
   async copyWithoutCSS(container: HTMLElement) {
     await this.cachedElementsToImages(container);
     if (!this.settings.isAuthKeyVaild()) {
-      const content = normalizePasteHTML(container.innerHTML);
+      const content = normalizePasteHTML(await this.imageManager.embleImages(container, this.app.vault));
+      this.assertNoUnresolvedLocalImages(content);
       await writeHtmlToClipboard(content);
       return;
     }
@@ -115,7 +116,15 @@ export class BaseRender implements MDRendererCallback {
     await this.imageManager.uploadToOSS(container, this.settings.authKey, this.app.vault);
 
     const content = normalizePasteHTML(container.innerHTML);
+    this.assertNoUnresolvedLocalImages(content);
     await writeHtmlToClipboard(content);
+  }
+
+  assertNoUnresolvedLocalImages(content: string) {
+    const unresolvedLocalImagePattern = /<img\b[^>]*\bsrc\s*=\s*(["']?)(?:app:\/\/|file:\/\/|obsidian:\/\/|resource:\/\/|capacitor:\/\/localhost\/|http:\/\/localhost\/)/i;
+    if (unresolvedLocalImagePattern.test(content)) {
+      throw new Error('复制失败：正文仍包含 Obsidian 本地图片链接。请先配置图床，或刷新工作台后重试。');
+    }
   }
 
   async exportHTML(container: HTMLElement, css: string) {
