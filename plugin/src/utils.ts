@@ -405,6 +405,7 @@ export function mimeToImageExt(type: string): string {
 }
 
 export function imageExtToMime(ext: string): string {
+	ext = ext.startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`;
 	const extToMime: { [key: string]: string } = {
 		'.jpg': 'image/jpeg',
 		'.jpeg': 'image/jpeg',

@@ -1,3 +1,8 @@
+## 1.0.9 (ObsidianToMP fork)
+- 修复无公众号/无图床配置时复制含本地图文章会把 `app://` 本地图片链接写入剪贴板的问题；现在会内嵌为可携带的 `data:image/...`，并在仍有本地链接残留时阻断成功提示。
+- 修复工作台在窄右侧栏中工具栏按钮被裁切的问题，默认改为单列工作台并让按钮自然换行。
+- 修复图片扩展名到 MIME 的归一化，避免 `png` 被误判成默认 JPEG。
+
 ## 1.0.6 (ObsidianToMP fork)
 - README 重写产品定位，补充多机型预览、和参考产品差异、为什么适合 Agent 写作发布链路。
 - 修正 Obsidian CLI 文档命令 ID，统一使用 `obsidian-to-mp:obsidian-to-mp-publish-queued-draft`。

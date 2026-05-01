@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-to-mp",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"description": "Obsidian plugin for WeChat MP publishing (local-first fork)",
 	"main": "main.js",
 	"scripts": {

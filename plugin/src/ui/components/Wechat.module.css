@@ -9,11 +9,16 @@
 }
 
 .Panel {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
   padding: 10px; /* Consistent padding */
   border-bottom: 1px solid var(--color-base-40);
   flex-shrink: 0; /* Keep the panel fixed at its content height */
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .Root[data-collapsed="true"] .Panel {
@@ -23,14 +28,25 @@
 .PanelRight {
   display: flex;
   flex-wrap: wrap;
+  flex: 1 1 auto;
   column-gap: 8px;
   row-gap: 6px;
-  padding: 0 10px;
+  padding: 0;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.PanelRight > * {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .PanelRight button {
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .PrimaryButton {
@@ -40,12 +56,15 @@
 
 .DeviceSwitch {
   display: inline-flex;
+  flex: 0 1 auto;
+  max-width: 100%;
   border: 1px solid var(--color-base-40);
   border-radius: 6px;
   overflow: hidden;
 }
 
 .DeviceSwitch button {
+  flex: 0 1 auto;
   border-radius: 0;
   border: 0;
   border-right: 1px solid var(--color-base-40);
@@ -109,10 +128,31 @@
   display: block;
 }
 
-@container (max-width: 490px) {
-  .LineBreak {
-    flex-basis: unset;
-    display: none;
+@container (max-width: 640px) {
+  .PanelRight button {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .DeviceSwitch button {
+    min-width: 48px;
+  }
+}
+
+@container (min-width: 720px) {
+  .Panel {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 420px) {
+  .DeviceSwitch {
+    width: 100%;
+  }
+
+  .DeviceSwitch button {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 
